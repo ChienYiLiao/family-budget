@@ -71,7 +71,6 @@ const StatsPage = (() => {
         <div class="category-rank-list" id="stats-category-rank"></div>
       </div>
     `;
-    page.classList.add('active');
   }
 
   async function _load() {

@@ -1,12 +1,11 @@
 /**
  * router.js — Hash-based 前端路由
- * 路由表：#dashboard, #add, #scan, #recurring, #history, #stats
  */
 
 const Router = (() => {
   const _routes = {};
   let _current = null;
-  let _isDirty = false;  // 表單是否有未儲存資料
+  let _isDirty = false;
 
   function register(hash, { onEnter, onLeave }) {
     _routes[hash] = { onEnter, onLeave };
@@ -37,23 +36,31 @@ const Router = (() => {
     const hash = _getHash();
     if (hash === _current) return;
 
-    // 離開前
-    if (_current && _routes[_current] && _routes[_current].onLeave) {
+    // 1. 離開目前頁面
+    if (_current && _routes[_current]?.onLeave) {
       _routes[_current].onLeave();
     }
+
+    // 2. 隱藏所有頁面
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+    // 3. 回到頂部
+    const content = document.getElementById('main-content');
+    if (content) content.scrollTop = 0;
+
+    // 4. 顯示目標頁面
+    const pageEl = document.getElementById(`page-${hash}`);
+    if (pageEl) pageEl.classList.add('active');
 
     _current = hash;
     State.setState({ currentPage: hash });
 
-    // 進入頁面
-    if (_routes[hash] && _routes[hash].onEnter) {
+    // 5. 進入新頁面
+    if (_routes[hash]?.onEnter) {
       _routes[hash].onEnter();
     }
 
-    // 更新 navbar 活躍狀態
     _updateNavbar(hash);
-
-    // 更新 topbar（顯示/隱藏返回按鈕）
     _updateTopbar(hash);
   }
 
@@ -85,7 +92,7 @@ const Router = (() => {
 
   function init() {
     window.addEventListener('hashchange', _handleRouteChange);
-    _handleRouteChange();  // 初始化
+    _handleRouteChange();
   }
 
   function getCurrent() { return _current; }

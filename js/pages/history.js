@@ -70,7 +70,6 @@ const HistoryPage = (() => {
       <!-- 記帳列表 -->
       <div id="hist-list"></div>
     `;
-    page.classList.add('active');
   }
 
   async function _loadData() {

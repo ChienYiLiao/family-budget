@@ -58,7 +58,6 @@ const ScanPage = (() => {
         </div>
       </div>
     `;
-    page.classList.add('active');
   }
 
   function _pickImage(source) {

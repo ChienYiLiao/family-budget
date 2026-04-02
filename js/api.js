@@ -1,8 +1,8 @@
 /**
  * api.js — GAS API 呼叫封裝層
  *
- * 推送方式（沿用 tokyo-expense 已驗證方案）：
- * 寫入操作一律用 GET + ?payload=JSON，避免瀏覽器跟隨 GAS 302 轉址時 POST→GET 問題。
+ * 一般寫入：GET + ?payload=JSON（tokyo-expense 已驗證，避免 302 轉址問題）
+ * 圖片上傳：POST + Content-Type:text/plain（base64 太大，GET URL 有長度限制）
  */
 
 const API = (() => {
@@ -11,9 +11,7 @@ const API = (() => {
     return `${CONFIG.GAS_URL}?${qs}`;
   }
 
-  /**
-   * 讀取操作：GET + query params
-   */
+  /** 讀取：GET + query params */
   async function get(action, params = {}) {
     const url = _url({ action, ...params });
     const res = await fetch(url);
@@ -22,13 +20,27 @@ const API = (() => {
     return data.data;
   }
 
-  /**
-   * 寫入操作：GET + payload JSON（tokyo-expense 方案）
-   */
+  /** 一般寫入：GET + payload（tokyo-expense 方案，避免 302 轉址） */
   async function write(action, body = {}) {
     const payload = JSON.stringify({ action, ...body });
     const url = _url({ payload });
     const res = await fetch(url);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'API Error');
+    return data.data;
+  }
+
+  /**
+   * 圖片上傳：真正的 POST（base64 太大，超過 URL 長度限制，必須用 POST body）
+   * Content-Type 設為 text/plain 避免 CORS preflight（GAS 不支援自訂 response header）
+   */
+  async function post(action, body = {}) {
+    const payload = JSON.stringify({ action, ...body });
+    const res = await fetch(CONFIG.GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: payload
+    });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'API Error');
     return data.data;
@@ -39,8 +51,9 @@ const API = (() => {
     getUsers() {
       return get('getUsers');
     },
+    // 頭像包含大型 base64 → 改用 POST
     updateAvatar(userId, base64, mimeType) {
-      return write('updateAvatar', { userId, imageBase64: base64, mimeType });
+      return post('updateAvatar', { userId, imageBase64: base64, mimeType });
     },
 
     // ── 收支 ────────────────────────────────────────────────────────────────
@@ -87,9 +100,9 @@ const API = (() => {
       return get('getStats', params);
     },
 
-    // ── 收據掃描 ────────────────────────────────────────────────────────────
+    // ── 收據掃描：圖片 base64 → 改用 POST ──────────────────────────────────
     scanReceipt(userId, base64, mimeType) {
-      return write('scanReceipt', { user_id: userId, imageBase64: base64, mimeType });
+      return post('scanReceipt', { user_id: userId, imageBase64: base64, mimeType });
     }
   };
 })();

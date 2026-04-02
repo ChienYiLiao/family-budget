@@ -108,7 +108,6 @@ const DashboardPage = (() => {
     `;
 
     document.getElementById('dash-scan-btn').onclick = () => Router.navigate('scan');
-    page.classList.add('active');
   }
 
   async function _loadData() {

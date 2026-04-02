@@ -1,116 +1,145 @@
 /**
- * add-transaction.js — 新增/編輯記帳頁面
+ * add-transaction.js — 新增記帳頁面
+ * 三個 Tab：支出 / 收入 / 固定收支（快速從預設項目記帳）
  */
 
 const AddPage = (() => {
   const PAGE_ID = 'page-add';
   let _type = 'expense';
-  let _isDirty = false;
+  let _tab = 'expense'; // 'expense' | 'income' | 'recurring'
+  let _recurringItems = [];
 
   function show() {
-    const prefill = State.getState().pendingTxn || {};
-    _type = prefill.type || 'expense';
-    _render(prefill);
-    if (prefill.amount) {
-      // 清除 pendingTxn
+    const prefill = State.getState().pendingTxn || null;
+    if (prefill) {
+      _tab = prefill.type === 'income' ? 'income' : 'expense';
+      _type = _tab;
       State.setState({ pendingTxn: null });
+    } else {
+      _tab = 'expense';
+      _type = 'expense';
     }
+    _render(prefill || {});
+    if (_tab === 'recurring') _loadRecurring();
   }
 
   function hide() {
     Router.setDirty(false);
-    _isDirty = false;
   }
 
   function _render(prefill = {}) {
     const page = document.getElementById(PAGE_ID);
     const today = Utils.today();
-
     page.innerHTML = `
-      <!-- 支出/收入切換 -->
-      <div style="padding:16px 16px 0;">
+      <!-- 三 Tab 切換 -->
+      <div style="padding:0 0 12px;">
         <div class="toggle-group">
-          <button class="toggle-btn ${_type==='expense'?'active expense':''}" id="tab-expense" onclick="AddPage._setType('expense')">支出</button>
-          <button class="toggle-btn ${_type==='income'?'active income':''}"  id="tab-income"  onclick="AddPage._setType('income')">收入</button>
+          <button class="toggle-btn ${_tab==='expense'?'active expense':''}" id="tab-expense"
+                  onclick="AddPage._switchTab('expense')">支出</button>
+          <button class="toggle-btn ${_tab==='income'?'active income':''}" id="tab-income"
+                  onclick="AddPage._switchTab('income')">收入</button>
+          <button class="toggle-btn ${_tab==='recurring'?'active':''}" id="tab-recurring"
+                  onclick="AddPage._switchTab('recurring')" style="${_tab==='recurring'?'color:var(--color-primary-light);':''}">🔁 固定</button>
         </div>
       </div>
 
-      <!-- 金額輸入 -->
-      <div class="amount-display">
-        <span class="amount-prefix">$</span><input
-          type="number" inputmode="decimal" id="add-amount"
-          class="form-input-amount" placeholder="0"
-          value="${prefill.amount || ''}" min="0" step="1">
-      </div>
+      <!-- 一般記帳表單 -->
+      <div id="add-normal-form" style="${_tab==='recurring'?'display:none;':''}">
+        <div class="amount-display">
+          <span class="amount-prefix">$</span><input
+            type="number" inputmode="decimal" id="add-amount"
+            class="form-input-amount" placeholder="0"
+            value="${prefill.amount || ''}" min="0">
+        </div>
 
-      <!-- 類別選擇 -->
-      <div style="padding:0 16px;">
-        <div class="form-label" style="margin-bottom:8px;">類別</div>
-        <div class="category-grid" id="category-grid"></div>
-      </div>
+        <div style="margin-bottom:12px;">
+          <div class="form-label" style="margin-bottom:8px;">類別</div>
+          <div class="category-grid" id="category-grid"></div>
+        </div>
 
-      <!-- 支付方式 -->
-      <div style="padding:16px 16px 0;">
-        <div class="form-label" style="margin-bottom:8px;">支付方式</div>
-        <div class="payment-group" id="payment-group">
-          ${CONFIG.PAYMENT_METHODS.map(p => `
-            <button class="payment-btn ${p.key} ${(prefill.payment_method||'cash')===p.key?'selected':''}"
-                    onclick="AddPage._selectPayment('${p.key}')" data-pay="${p.key}">
-              ${p.emoji} ${p.label}
-            </button>
-          `).join('')}
+        <div class="form-group">
+          <div class="form-label">支付方式</div>
+          <div class="payment-group" id="payment-group">
+            ${CONFIG.PAYMENT_METHODS.map(p => `
+              <button class="payment-btn ${p.key} ${(prefill.payment_method||'cash')===p.key?'selected':''}"
+                      onclick="AddPage._selectPayment('${p.key}')" data-pay="${p.key}">
+                ${p.emoji} ${p.label}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">日期</div>
+          <input type="date" id="add-date" class="form-input"
+                 value="${prefill.date || today}" max="${today}">
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">備註</div>
+          <input type="text" id="add-note" class="form-input"
+                 placeholder="備註（選填）" value="${prefill.note || ''}" maxlength="50">
+        </div>
+
+        ${prefill.merchant_name ? `
+        <div class="form-group">
+          <div class="form-label">店家名稱</div>
+          <input type="text" id="add-merchant" class="form-input"
+                 value="${prefill.merchant_name}">
+        </div>` : ''}
+
+        <div style="padding-top:8px;">
+          <button class="btn btn-primary btn-block" onclick="AddPage._submit()">確認記帳</button>
         </div>
       </div>
 
-      <!-- 日期 -->
-      <div style="padding:16px 16px 0;">
-        <div class="form-label" style="margin-bottom:8px;">日期</div>
-        <input type="date" id="add-date" class="form-input" value="${prefill.date || today}" max="${today}">
-      </div>
-
-      <!-- 備註 -->
-      <div style="padding:16px 16px 0;">
-        <div class="form-label" style="margin-bottom:8px;">備註</div>
-        <input type="text" id="add-note" class="form-input" placeholder="備註（選填）"
-               value="${prefill.note || ''}" maxlength="50">
-      </div>
-
-      <!-- 店名（收據識別時帶入） -->
-      <div style="padding:16px 16px 0;" id="merchant-row" class="${prefill.merchant_name?'':'hidden'}">
-        <div class="form-label" style="margin-bottom:8px;">店家名稱</div>
-        <input type="text" id="add-merchant" class="form-input" placeholder="店家名稱"
-               value="${prefill.merchant_name || ''}">
-      </div>
-
-      <!-- 提交按鈕 -->
-      <div style="padding:24px 16px;">
-        <button class="btn btn-primary btn-block" onclick="AddPage._submit()">
-          確認記帳
-        </button>
+      <!-- 固定收支快速記帳 -->
+      <div id="add-recurring-panel" style="${_tab!=='recurring'?'display:none;':''}">
+        <div style="color:var(--color-text-muted);font-size:13px;margin-bottom:12px;">
+          點選下方項目快速記帳，不影響日常記帳統計。
+          <a href="#recurring" style="color:var(--color-primary-light);font-weight:600;margin-left:4px;">管理 →</a>
+        </div>
+        <div id="recurring-shortcuts"></div>
       </div>
     `;
 
     _renderCategories(prefill.category);
 
-    // 監聽輸入 dirty
-    const trackDirty = () => {
-      _isDirty = true;
-      Router.setDirty(true);
-    };
-    ['add-amount','add-date','add-note','add-merchant'].forEach(id => {
+    // dirty tracking
+    ['add-amount','add-date','add-note'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.addEventListener('input', trackDirty);
+      if (el) el.addEventListener('input', () => Router.setDirty(true));
     });
 
-    page.classList.add('active');
+    if (_tab === 'recurring') _loadRecurring();
+  }
+
+  function _switchTab(tab) {
+    _tab = tab;
+    document.getElementById('tab-expense').className  = `toggle-btn ${tab==='expense'?'active expense':''}`;
+    document.getElementById('tab-income').className   = `toggle-btn ${tab==='income'?'active income':''}`;
+    document.getElementById('tab-recurring').className = `toggle-btn ${tab==='recurring'?'active':''}`;
+    if (tab === 'recurring') document.getElementById('tab-recurring').style.color = tab==='recurring'?'var(--color-primary-light)':'';
+
+    const normalForm     = document.getElementById('add-normal-form');
+    const recurringPanel = document.getElementById('add-recurring-panel');
+    if (normalForm)     normalForm.style.display     = tab === 'recurring' ? 'none' : '';
+    if (recurringPanel) recurringPanel.style.display = tab === 'recurring' ? '' : 'none';
+
+    if (tab !== 'recurring') {
+      _type = tab;
+      _renderCategories(null);
+    } else {
+      _loadRecurring();
+    }
   }
 
   function _renderCategories(selected) {
     const grid = document.getElementById('category-grid');
     if (!grid) return;
-    const cats = _type === 'expense' ? CONFIG.EXPENSE_CATEGORIES : CONFIG.INCOME_CATEGORIES;
+    const cats = _type === 'income' ? CONFIG.INCOME_CATEGORIES : CONFIG.EXPENSE_CATEGORIES;
     grid.innerHTML = cats.map(c => `
-      <button class="category-item ${c.name === selected ? 'selected' : ''}"
+      <button class="category-item ${c.name===selected?'selected':''}"
               onclick="AddPage._selectCategory('${c.name}')" data-cat="${c.name}">
         <div class="cat-icon">${c.emoji}</div>
         <div class="cat-name">${c.name}</div>
@@ -118,42 +147,124 @@ const AddPage = (() => {
     `).join('');
   }
 
-  function _setType(type) {
-    _type = type;
-    // 更新 toggle
-    document.getElementById('tab-expense').className = `toggle-btn ${type==='expense'?'active expense':''}`;
-    document.getElementById('tab-income').className  = `toggle-btn ${type==='income'?'active income':''}`;
-    // 重新渲染類別
-    const currentCat = document.querySelector('.category-item.selected')?.dataset.cat || '';
-    _renderCategories(currentCat);
-  }
-
   function _selectCategory(name) {
-    document.querySelectorAll('.category-item').forEach(el => {
-      el.classList.toggle('selected', el.dataset.cat === name);
-    });
+    document.querySelectorAll('.category-item').forEach(el =>
+      el.classList.toggle('selected', el.dataset.cat === name)
+    );
   }
 
   function _selectPayment(key) {
-    document.querySelectorAll('.payment-btn').forEach(el => {
-      el.classList.toggle('selected', el.dataset.pay === key);
-    });
+    document.querySelectorAll('.payment-btn').forEach(el =>
+      el.classList.toggle('selected', el.dataset.pay === key)
+    );
+  }
+
+  async function _loadRecurring() {
+    const el = document.getElementById('recurring-shortcuts');
+    if (!el) return;
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--color-text-muted);">載入中...</div>`;
+    try {
+      const result = await API.getRecurring();
+      _recurringItems = (result.recurring || []).filter(r => String(r.is_active).toUpperCase() === 'TRUE');
+      _renderRecurringShortcuts();
+    } catch(err) {
+      el.innerHTML = `<div style="color:var(--color-expense);font-size:13px;">載入失敗：${err.message}</div>`;
+    }
+  }
+
+  function _renderRecurringShortcuts() {
+    const el = document.getElementById('recurring-shortcuts');
+    if (!el) return;
+    if (!_recurringItems.length) {
+      el.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">🔁</div>
+          <div class="empty-state-title">尚未設定固定收支</div>
+          <div class="empty-state-desc">到「固定」頁面新增定期項目</div>
+          <div style="margin-top:16px;">
+            <a href="#recurring" class="btn btn-primary">前往管理</a>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const income  = _recurringItems.filter(r => r.type === 'income');
+    const expense = _recurringItems.filter(r => r.type === 'expense');
+
+    const renderGroup = (items, type) => items.length ? `
+      <div class="section-title" style="color:${type==='income'?'var(--color-income)':'var(--color-expense)'};">
+        ${type === 'income' ? '💰 固定收入' : '💸 固定支出'}
+      </div>
+      ${items.map(r => {
+        const emoji = CONFIG.getCategoryEmoji(r.category);
+        return `
+          <div class="txn-item" style="margin-bottom:6px;cursor:pointer;"
+               onclick="AddPage._quickRecord('${r.recurring_id}')">
+            <div class="txn-cat-icon">${emoji}</div>
+            <div class="txn-info">
+              <div class="txn-category">${r.name || r.category}</div>
+              <div class="txn-note">每月 ${r.day_of_month} 日・${CONFIG.getPaymentLabel(r.payment_method)}</div>
+            </div>
+            <div class="txn-right">
+              <div class="txn-amount ${type}">${type==='income'?'+':'-'}${Utils.formatAmount(r.amount)}</div>
+              <div class="txn-meta">點擊記帳</div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    ` : '';
+
+    el.innerHTML = renderGroup(income, 'income') + renderGroup(expense, 'expense');
+  }
+
+  async function _quickRecord(recurringId) {
+    const item = _recurringItems.find(r => r.recurring_id === recurringId);
+    if (!item) return;
+    const user = State.getState().currentUser;
+    if (!user) { Toast.error('請先選擇使用者'); return; }
+
+    const ok = await Modal.confirm(
+      `確定記帳「${item.name || item.category}」${Utils.formatAmount(item.amount)}？`,
+      { confirmText: '確定記帳' }
+    );
+    if (!ok) return;
+
+    Loader.show('記帳中...');
+    try {
+      await API.addTransaction({
+        user_id:        user.userId,
+        type:           item.type,
+        amount:         item.amount,
+        category:       item.category,
+        payment_method: item.payment_method,
+        note:           `固定：${item.name || item.category}`,
+        merchant_name:  '',
+        receipt_source: 'recurring',
+        date:           Utils.today()
+      });
+      State.invalidateTransactionCache();
+      Toast.success('記帳成功！');
+    } catch(err) {
+      Toast.error('記帳失敗：' + err.message);
+    } finally {
+      Loader.hide();
+    }
   }
 
   async function _submit() {
     const user = State.getState().currentUser;
     if (!user) { Toast.error('請先選擇使用者'); return; }
 
-    const amount = parseFloat(document.getElementById('add-amount').value);
+    const amount = parseFloat(document.getElementById('add-amount')?.value);
     if (!amount || amount <= 0) { Toast.error('請輸入金額'); return; }
 
     const category = document.querySelector('.category-item.selected')?.dataset.cat;
     if (!category) { Toast.error('請選擇類別'); return; }
 
     const payMethod = document.querySelector('.payment-btn.selected')?.dataset.pay || 'cash';
-    const date      = document.getElementById('add-date').value    || Utils.today();
-    const note      = document.getElementById('add-note').value    || '';
-    const merchant  = document.getElementById('add-merchant')?.value || '';
+    const date      = document.getElementById('add-date')?.value      || Utils.today();
+    const note      = document.getElementById('add-note')?.value      || '';
+    const merchant  = document.getElementById('add-merchant')?.value  || '';
 
     Loader.show('記帳中...');
     try {
@@ -170,15 +281,14 @@ const AddPage = (() => {
       });
       State.invalidateTransactionCache();
       Router.setDirty(false);
-      _isDirty = false;
       Toast.success('記帳成功！💰');
       Router.navigate('dashboard', true);
-    } catch (err) {
+    } catch(err) {
       Toast.error('記帳失敗：' + err.message);
     } finally {
       Loader.hide();
     }
   }
 
-  return { show, hide, _setType, _selectCategory, _selectPayment, _submit };
+  return { show, hide, _switchTab, _selectCategory, _selectPayment, _submit, _quickRecord };
 })();
