@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#6c63ff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>家庭記帳本</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Cropper.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+</head>
+<body>
+<div id="app">
+  <!-- 頂部 TopBar -->
+  <header id="topbar">
+    <button class="topbar-back" id="topbar-back" style="display:none;" onclick="history.back()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M19 12H5M12 5l-7 7 7 7"/>
+      </svg>
+    </button>
+    <div class="topbar-title" id="topbar-title">記帳本</div>
+    <div class="topbar-right" id="topbar-right">
+      <div class="topbar-user" id="topbar-user">
+        <img class="user-avatar sm" id="topbar-avatar" src="" alt="" onerror="this.style.display='none'">
+        <span class="topbar-user-name" id="topbar-user-name"></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主內容區 -->
+  <main id="main-content">
+    <!-- Dashboard 頁面 -->
+    <div id="page-dashboard" class="page active"></div>
+    <!-- 新增記帳 -->
+    <div id="page-add" class="page"></div>
+    <!-- 收據掃描 -->
+    <div id="page-scan" class="page"></div>
+    <!-- 固定收支 -->
+    <div id="page-recurring" class="page"></div>
+    <!-- 歷史記錄 -->
+    <div id="page-history" class="page"></div>
+    <!-- 統計分析 -->
+    <div id="page-stats" class="page"></div>
+  </main>
+
+  <!-- 底部導覽列 -->
+  <nav id="navbar"></nav>
+</div>
+
+<!-- Loading 遮罩 -->
+<div class="loader-overlay" id="loader-overlay">
+  <div class="loader-spinner"></div>
+  <div class="loader-text">載入中...</div>
+</div>
+
+<!-- Toast 容器 -->
+<div id="toast-container"></div>
+
+<!-- JS: 核心 -->
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/state.js"></script>
+<script src="js/api.js"></script>
+<!-- JS: 元件 -->
+<script src="js/components/toast.js"></script>
+<script src="js/components/loader.js"></script>
+<script src="js/components/modal.js"></script>
+<script src="js/components/navbar.js"></script>
+<script src="js/components/avatar-cropper.js"></script>
+<!-- JS: 路由 -->
+<script src="js/router.js"></script>
+<!-- JS: 頁面 -->
+<script src="js/pages/dashboard.js"></script>
+<script src="js/pages/add-transaction.js"></script>
+<script src="js/pages/receipt-scan.js"></script>
+<script src="js/pages/recurring.js"></script>
+<script src="js/pages/history.js"></script>
+<script src="js/pages/stats.js"></script>
+
+<script>
+// ── App 初始化 ──────────────────────────────────────────────────────────────
+(async function initApp() {
+  // 驗證使用者身份，未登入跳回選擇頁
+  const user = State.loadUser();
+  if (!user) {
+    window.location.replace('index.html');
+    return;
+  }
+
+  // 更新 topbar 使用者資訊
+  function updateTopbarUser() {
+    const u = State.getState().currentUser;
+    if (!u) return;
+    const nameEl   = document.getElementById('topbar-user-name');
+    const avatarEl = document.getElementById('topbar-avatar');
+    if (nameEl)   nameEl.textContent = u.displayName;
+    if (avatarEl) {
+      avatarEl.src = u.avatarUrl || CONFIG.USERS[u.userId]?.defaultAvatar || '';
+      avatarEl.style.display = 'block';
+    }
+  }
+  updateTopbarUser();
+  State.subscribe(updateTopbarUser);
+
+  // 點擊 topbar 使用者可切換帳號
+  document.getElementById('topbar-user').onclick = () => {
+    Modal.confirm('切換使用者？', { confirmText: '切換', cancelText: '留下' }).then(ok => {
+      if (ok) {
+        State.clearUser();
+        window.location.replace('index.html');
+      }
+    });
+  };
+
+  // 渲染導覽列
+  Navbar.render();
+
+  // 註冊路由
+  Router.register('dashboard', {
+    onEnter: () => { DashboardPage.show(); },
+    onLeave: () => { DashboardPage.hide(); }
+  });
+  Router.register('add', {
+    onEnter: () => { AddPage.show(); },
+    onLeave: () => { AddPage.hide(); }
+  });
+  Router.register('scan', {
+    onEnter: () => { ScanPage.show(); },
+    onLeave: () => { ScanPage.hide(); }
+  });
+  Router.register('recurring', {
+    onEnter: () => { RecurringPage.show(); },
+    onLeave: () => { RecurringPage.hide(); }
+  });
+  Router.register('history', {
+    onEnter: () => { HistoryPage.show(); },
+    onLeave: () => { HistoryPage.hide(); }
+  });
+  Router.register('stats', {
+    onEnter: () => { StatsPage.show(); },
+    onLeave: () => { StatsPage.hide(); }
+  });
+
+  // 初始化路由
+  Router.init();
+
+  // 套用本月固定收支（靜默執行）
+  const now = new Date();
+  API.applyRecurring(now.getFullYear(), now.getMonth() + 1).catch(() => {});
+})();
+</script>
+</body>
+</html>
