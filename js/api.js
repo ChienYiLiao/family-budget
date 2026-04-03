@@ -105,9 +105,6 @@ const API = (() => {
       return write('generateMonthlyReport', {});
     },
 
-    // ── 收據掃描：圖片 base64 → 改用 POST ──────────────────────────────────
-    scanReceipt(userId, base64, mimeType) {
-      return post('scanReceipt', { user_id: userId, imageBase64: base64, mimeType });
-    }
+    // 收據掃描已改為前端直接呼叫 Gemini（receipt-scan.js），不需要經過 GAS
   };
 })();

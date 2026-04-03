@@ -94,23 +94,98 @@ const ScanPage = (() => {
     const user = State.getState().currentUser;
     if (!user) { Toast.error('請先選擇使用者'); return; }
 
+    if (!CONFIG.GEMINI_API_KEY) {
+      Toast.error('請先在 config.js 填入 GEMINI_API_KEY');
+      return;
+    }
+
     Loader.show('AI 識別中...\n約需 5-10 秒');
     try {
       const { base64, mimeType } = await Utils.compressImage(_selectedFile, 1200, 0.85);
-      const result = await API.scanReceipt(user.userId, base64, mimeType);
+      const parsed = await _callGemini(base64, mimeType);
 
-      if (!result.success) {
-        Toast.error(result.error || '識別失敗');
-        return;
-      }
-
-      _scanResult = result;
-      _renderResult(result);
+      _scanResult = {
+        success:           true,
+        merchantName:      parsed.merchantName      || '',
+        amount:            parsed.amount            || null,
+        date:              parsed.date              || null,
+        taxType:           parsed.taxType           || null,
+        items:             parsed.items             || [],
+        suggestedCategory: parsed.suggestedCategory || '其他',
+        confidence:        parsed.confidence        || 0
+      };
+      _renderResult(_scanResult);
     } catch (err) {
       Toast.error('掃描失敗：' + err.message);
     } finally {
       Loader.hide();
     }
+  }
+
+  async function _callGemini(base64, mimeType) {
+    const key = CONFIG.GEMINI_API_KEY;
+    const models = [
+      'gemini-2.0-flash',
+      'gemini-1.5-flash-latest',
+      'gemini-1.5-flash',
+      'gemini-flash-latest'
+    ];
+
+    const prompt = `你是一個專業的繁體中文發票/收據解析助手。
+請仔細分析這張發票或收據圖片，提取所有可見的資訊。
+
+請以 JSON 格式回傳以下資訊（所有欄位都必須填寫，無法辨識的欄位填 null）：
+{
+  "merchantName": "店家名稱（字串，如：全家便利商店、麥當勞）",
+  "amount": 總金額數字（不含貨幣符號，純數字，例如：156），
+  "date": "交易日期（YYYY-MM-DD 格式，無法辨識則填 null）",
+  "taxType": "含稅/未稅/免稅（無法辨識填 null）",
+  "items": [
+    { "name": "品項名稱", "price": 單價數字, "quantity": 數量數字 }
+  ],
+  "suggestedCategory": "從以下分類選一個最合適的：三餐/飲料/點心/看診/藥物/日用品/加油/叫車/大眾運輸/衣物/化妝品/包包/3C產品/禮物/剪頭髮/霧眉/玩樂/投資/拜拜/其他",
+  "confidence": 整體辨識信心分數（0.0 到 1.0）
+}
+
+注意：
+- 所有文字請用繁體中文
+- 金額只填數字，不要包含 NT$、$ 等符號
+- 只回傳 JSON，不要包含任何其他說明文字或 markdown 語法`;
+
+    const payload = {
+      contents: [{ parts: [
+        { text: prompt },
+        { inline_data: { mime_type: mimeType, data: base64 } }
+      ]}],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 4096 }
+    };
+
+    let lastError = '';
+    for (const model of models) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+      const res  = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        const msg = data.error.message || '';
+        const code = data.error.code || 0;
+        // 模型不存在/已棄用 → 換下一個
+        if (code === 404 || msg.includes('not found') || msg.includes('deprecated') || msg.includes('no longer')) {
+          lastError = msg;
+          continue;
+        }
+        throw new Error('Gemini 錯誤：' + msg);
+      }
+
+      let text = data.candidates[0].content.parts[0].text.trim();
+      text = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+      return JSON.parse(text);
+    }
+    throw new Error('所有 Gemini 模型均無法使用：' + lastError);
   }
 
   function _renderResult(r) {
