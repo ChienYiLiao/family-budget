@@ -172,6 +172,9 @@ const AddPage = (() => {
     }
   }
 
+  // 浮動金額類別（點擊後提示可調整）
+  const _VARIABLE_CATEGORIES = new Set(['薪水','投資','投資收益','水費','電費','瓦斯費','電話費']);
+
   function _renderRecurringShortcuts() {
     const el = document.getElementById('recurring-shortcuts');
     if (!el) return;
@@ -197,6 +200,7 @@ const AddPage = (() => {
       </div>
       ${items.map(r => {
         const emoji = CONFIG.getCategoryEmoji(r.category);
+        const isVariable = _VARIABLE_CATEGORIES.has(r.category);
         return `
           <div class="txn-item" style="margin-bottom:6px;cursor:pointer;"
                onclick="AddPage._quickRecord('${r.recurring_id}')">
@@ -207,7 +211,7 @@ const AddPage = (() => {
             </div>
             <div class="txn-right">
               <div class="txn-amount ${type}">${type==='income'?'+':'-'}${Utils.formatAmount(r.amount)}</div>
-              <div class="txn-meta">點擊記帳</div>
+              <div class="txn-meta">${isVariable ? '✏️ 可調整金額' : '點擊記帳'}</div>
             </div>
           </div>
         `;

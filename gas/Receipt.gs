@@ -17,8 +17,8 @@ function handleScanReceipt(body) {
     return { success: false, error: '後端未設定 Gemini API Key，請聯絡管理員' };
   }
 
-  // Gemini 1.5 Flash 原生視覺：直接送圖片 + prompt，不需 Vision API
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
+  // Gemini Flash Latest 原生視覺：直接送圖片 + prompt，不需 Vision API
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${geminiKey}`;
 
   const prompt = `你是一個專業的繁體中文發票/收據解析助手。
 請仔細分析這張發票或收據圖片，提取所有可見的資訊。

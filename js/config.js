@@ -17,7 +17,7 @@ const CONFIG = {
     user_gungun: {
       displayName: '滾滾',
       defaultAvatar: 'assets/default-avatars/gungun.png',
-      emoji: '🐱'
+      emoji: '🧚‍♀️'
     }
   },
 
