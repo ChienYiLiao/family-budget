@@ -94,15 +94,13 @@ const ScanPage = (() => {
     const user = State.getState().currentUser;
     if (!user) { Toast.error('請先選擇使用者'); return; }
 
-    if (!CONFIG.GEMINI_API_KEY) {
-      Toast.error('請先在 config.js 填入 GEMINI_API_KEY');
-      return;
-    }
+    const geminiKey = _getGeminiKey();
+    if (!geminiKey) return;
 
     Loader.show('AI 識別中...\n約需 5-10 秒');
     try {
       const { base64, mimeType } = await Utils.compressImage(_selectedFile, 1200, 0.85);
-      const parsed = await _callGemini(base64, mimeType);
+      const parsed = await _callGemini(base64, mimeType, geminiKey);
 
       _scanResult = {
         success:           true,
@@ -122,8 +120,20 @@ const ScanPage = (() => {
     }
   }
 
-  async function _callGemini(base64, mimeType) {
-    const key = CONFIG.GEMINI_API_KEY;
+  function _getGeminiKey() {
+    const saved = localStorage.getItem('gemini_api_key');
+    if (saved) return saved;
+
+    const key = prompt('請輸入 Google AI Studio API Key：\n（只需輸入一次，會自動記住）');
+    if (!key || !key.trim()) {
+      Toast.error('未輸入 API Key，無法掃描');
+      return null;
+    }
+    localStorage.setItem('gemini_api_key', key.trim());
+    return key.trim();
+  }
+
+  async function _callGemini(base64, mimeType, key) {
     const models = [
       'gemini-2.0-flash',
       'gemini-1.5-flash-latest',

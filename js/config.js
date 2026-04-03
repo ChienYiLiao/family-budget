@@ -7,8 +7,7 @@ const CONFIG = {
   // ── 部署後填入 Google Apps Script Web App URL ──────────────────────────────
   GAS_URL: 'https://script.google.com/macros/s/AKfycbyXAdgP6YSh23E1jCFsETwdptSxUyPH9uDdcmnv5b95gQADaAKfR3S4nlspGPi19k3_pw/exec',
 
-  // ── Google AI Studio API Key（前端直接呼叫 Gemini，不經過 GAS）───────────
-  GEMINI_API_KEY: 'AIzaSyAhxC7heJD02Hc-MhpWIxF6CB9wbasa8Rs',
+  // GEMINI_API_KEY 不放這裡，儲存在 localStorage（避免暴露在 git）
 
   // ── 使用者設定 ─────────────────────────────────────────────────────────────
   USERS: {
