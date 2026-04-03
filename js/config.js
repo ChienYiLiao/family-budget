@@ -101,3 +101,12 @@ CONFIG.getPaymentEmoji = function(key) {
   const found = CONFIG.PAYMENT_METHODS.find(p => p.key === key);
   return found ? found.emoji : '';
 };
+
+// 取得使用者顯示 emoji（shared 顯示兩人）
+CONFIG.getUserDisplay = function(userId) {
+  if (userId === 'shared') {
+    return Object.values(CONFIG.USERS).map(u => u.emoji).join('');
+  }
+  const user = CONFIG.USERS[userId];
+  return user ? user.emoji : '👤';
+};

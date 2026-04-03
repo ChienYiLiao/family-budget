@@ -7,10 +7,12 @@ const AddPage = (() => {
   const PAGE_ID = 'page-add';
   let _type = 'expense';
   let _tab = 'expense'; // 'expense' | 'income' | 'recurring'
+  let _who = 'personal'; // 'personal' | 'shared'
   let _recurringItems = [];
 
   function show() {
     const prefill = State.getState().pendingTxn || null;
+    _who = 'personal';
     if (prefill) {
       _tab = prefill.type === 'income' ? 'income' : 'expense';
       _type = _tab;
@@ -66,6 +68,16 @@ const AddPage = (() => {
                 ${p.emoji} ${p.label}
               </button>
             `).join('')}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">記帳對象</div>
+          <div class="toggle-group">
+            <button class="toggle-btn ${_who==='personal'?'active':''}" id="who-personal"
+                    onclick="AddPage._selectWho('personal')">👤 個人</button>
+            <button class="toggle-btn ${_who==='shared'?'active':''}" id="who-shared"
+                    onclick="AddPage._selectWho('shared')">👫 共同</button>
           </div>
         </div>
 
@@ -157,6 +169,14 @@ const AddPage = (() => {
     document.querySelectorAll('.payment-btn').forEach(el =>
       el.classList.toggle('selected', el.dataset.pay === key)
     );
+  }
+
+  function _selectWho(who) {
+    _who = who;
+    const personal = document.getElementById('who-personal');
+    const shared   = document.getElementById('who-shared');
+    if (personal) personal.className = `toggle-btn ${who==='personal'?'active':''}`;
+    if (shared)   shared.className   = `toggle-btn ${who==='shared'?'active':''}`;
   }
 
   async function _loadRecurring() {
@@ -322,7 +342,7 @@ const AddPage = (() => {
     Loader.show('記帳中...');
     try {
       await API.addTransaction({
-        user_id:        user.userId,
+        user_id:        _who === 'shared' ? 'shared' : user.userId,
         type:           _type,
         amount,
         category,
@@ -343,5 +363,5 @@ const AddPage = (() => {
     }
   }
 
-  return { show, hide, _switchTab, _selectCategory, _selectPayment, _submit, _quickRecord };
+  return { show, hide, _switchTab, _selectCategory, _selectPayment, _selectWho, _submit, _quickRecord };
 })();

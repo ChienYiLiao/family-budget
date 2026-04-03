@@ -136,8 +136,7 @@ const HistoryPage = (() => {
   function _renderTxnItem(t) {
     const emoji = CONFIG.getCategoryEmoji(t.category);
     const isExpense = t.type === 'expense';
-    const user = CONFIG.USERS[t.user_id];
-    const userEmoji = user ? user.emoji : '👤';
+    const userEmoji = CONFIG.getUserDisplay(t.user_id);
     const payLabel = CONFIG.getPaymentLabel(t.payment_method);
     return `
       <div class="txn-item" onclick="HistoryPage._openDetail('${t.transaction_id}')">
@@ -185,6 +184,7 @@ const HistoryPage = (() => {
         ${_detailRow('支付方式', CONFIG.getPaymentEmoji(t.payment_method) + ' ' + CONFIG.getPaymentLabel(t.payment_method))}
         ${t.note ? _detailRow('備註', t.note) : ''}
         ${t.merchant_name ? _detailRow('店家', t.merchant_name) : ''}
+        ${_detailRow('記帳對象', t.user_id === 'shared' ? `${CONFIG.getUserDisplay('shared')} 共同` : CONFIG.getUserDisplay(t.user_id) + ' ' + (CONFIG.USERS[t.user_id]?.displayName || ''))}
         ${_detailRow('來源', t.receipt_source === 'receipt_scan' ? '📷 收據掃描' : t.receipt_source === 'recurring' ? '🔁 固定收支' : '✏️ 手動記帳')}
         <div style="display:flex;gap:12px;margin-top:16px;">
           <button class="btn btn-secondary btn-block" onclick="Modal.hide('txn-detail-overlay')">關閉</button>

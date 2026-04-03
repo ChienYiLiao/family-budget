@@ -246,8 +246,7 @@ const DashboardPage = (() => {
   function _renderTxnItem(t) {
     const emoji = CONFIG.getCategoryEmoji(t.category);
     const isExpense = t.type === 'expense';
-    const user = CONFIG.USERS[t.user_id];
-    const userEmoji = user ? user.emoji : '👤';
+    const userEmoji = CONFIG.getUserDisplay(t.user_id);
     return `
       <div class="txn-item">
         <div class="txn-cat-icon">${emoji}</div>
