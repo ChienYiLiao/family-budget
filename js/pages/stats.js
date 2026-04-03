@@ -48,6 +48,14 @@ const StatsPage = (() => {
         <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="StatsPage._generateReport()">產生月報表</button>
       </div>
 
+      <!-- 使用者收支對比 -->
+      <div class="card section">
+        <div class="card-header">
+          <div class="card-title">收支對比</div>
+        </div>
+        <div id="stats-user-breakdown"></div>
+      </div>
+
       <!-- 月趨勢 -->
       <div class="card section">
         <div class="card-header">
@@ -99,6 +107,7 @@ const StatsPage = (() => {
     Loader.show('統計中...');
     try {
       const data = await API.getStats({ startYear, startMonth, endYear, endMonth, excludeRecurring });
+      _renderUserBreakdown(data.userBreakdown);
       _renderTrendChart(data.monthlyTrend);
       _renderPayChart(data.paymentMethodBreakdown);
       _renderCategoryRank(data.categoryBreakdown);
@@ -190,6 +199,54 @@ const StatsPage = (() => {
 
   async function _loadData() {
     await _load();
+  }
+
+  function _renderUserBreakdown(breakdown) {
+    const el = document.getElementById('stats-user-breakdown');
+    if (!el) return;
+    if (!breakdown || !breakdown.length) {
+      el.innerHTML = '<div style="color:var(--color-text-muted);font-size:13px;">尚無資料</div>';
+      return;
+    }
+
+    const userMeta = {
+      user_pigpig: { label: '豬豬', emoji: CONFIG.USERS.user_pigpig?.emoji || '🐷' },
+      user_gungun: { label: '滾滾', emoji: CONFIG.USERS.user_gungun?.emoji || '🧚‍♀️' },
+      shared:      { label: '共同', emoji: '👫' }
+    };
+
+    // 欄位標題
+    const header = `
+      <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr;gap:4px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--color-border);">
+        <div></div>
+        <div style="text-align:right;font-size:11px;font-weight:700;color:var(--color-text-muted);">收入</div>
+        <div style="text-align:right;font-size:11px;font-weight:700;color:var(--color-text-muted);">支出</div>
+        <div style="text-align:right;font-size:11px;font-weight:700;color:var(--color-text-muted);">結餘</div>
+      </div>`;
+
+    const rows = breakdown.map(u => {
+      const meta    = userMeta[u.userId] || { label: u.userId, emoji: '👤' };
+      const netColor = u.net >= 0 ? 'var(--color-income)' : 'var(--color-expense)';
+      const hasData = u.income > 0 || u.expense > 0;
+      return `
+        <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr;gap:4px;padding:10px 0;border-bottom:1px solid var(--color-border);">
+          <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;">
+            <span>${meta.emoji}</span>
+            <span>${meta.label}</span>
+          </div>
+          <div style="text-align:right;font-size:13px;color:var(--color-income);font-weight:600;">
+            ${hasData && u.income > 0 ? '+' + Utils.formatAmount(u.income) : '—'}
+          </div>
+          <div style="text-align:right;font-size:13px;color:var(--color-expense);font-weight:600;">
+            ${hasData && u.expense > 0 ? '-' + Utils.formatAmount(u.expense) : '—'}
+          </div>
+          <div style="text-align:right;font-size:13px;color:${netColor};font-weight:700;">
+            ${hasData ? (u.net >= 0 ? '+' : '') + Utils.formatAmount(u.net) : '—'}
+          </div>
+        </div>`;
+    }).join('');
+
+    el.innerHTML = header + rows;
   }
 
   function _renderTrendChart(trend) {

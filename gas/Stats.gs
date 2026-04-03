@@ -90,12 +90,26 @@ function handleGetStats(params) {
       user_id:        r.user_id || ''
     }));
 
+  // 使用者收支對比（不受 userId 篩選影響，永遠顯示三方）
+  let allPeriodTxns = excludeRecurring
+    ? allTxns.filter(r => r.receipt_source !== 'recurring')
+    : allTxns;
+  allPeriodTxns = allPeriodTxns.filter(r => r.date && months.includes(r.date.substring(0, 7)));
+
+  const userBreakdown = ['user_pigpig', 'user_gungun', 'shared'].map(uid => {
+    const ut      = allPeriodTxns.filter(r => r.user_id === uid);
+    const income  = ut.filter(r => r.type === 'income' ).reduce((s, r) => s + (Number(r.amount)||0), 0);
+    const expense = ut.filter(r => r.type === 'expense').reduce((s, r) => s + (Number(r.amount)||0), 0);
+    return { userId: uid, income, expense, net: income - expense };
+  });
+
   return {
     monthlyTrend,
     categoryBreakdown,
     paymentMethodBreakdown,
     monthCategory,
-    topTransactions
+    topTransactions,
+    userBreakdown
   };
 }
 
