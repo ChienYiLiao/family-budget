@@ -249,7 +249,10 @@ const ScanPage = (() => {
 
   function _useResult() {
     if (!_scanResult) return;
-    // 帶資料到新增記帳頁
+    const items = _scanResult.items || [];
+    const note = items.length > 0
+      ? items.map(it => it.name).join('、')
+      : (_scanResult.merchantName || '');
     State.setState({
       pendingTxn: {
         type:           'expense',
@@ -257,7 +260,7 @@ const ScanPage = (() => {
         category:       _scanResult.suggestedCategory || '其他',
         date:           _scanResult.date || Utils.today(),
         merchant_name:  _scanResult.merchantName || '',
-        note:           _scanResult.merchantName || '',
+        note,
         payment_method: 'cash'
       }
     });
