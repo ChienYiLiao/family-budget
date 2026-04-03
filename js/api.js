@@ -101,8 +101,8 @@ const API = (() => {
     },
 
     // ── 統計 ────────────────────────────────────────────────────────────────
-    generateMonthlyReport() {
-      return write('generateMonthlyReport', {});
+    generateMonthlyReport(params = {}) {
+      return write('generateMonthlyReport', params);
     },
 
     // 收據掃描已改為前端直接呼叫 Gemini（receipt-scan.js），不需要經過 GAS

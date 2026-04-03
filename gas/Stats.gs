@@ -104,6 +104,9 @@ function handleGetStats(params) {
  * 固定收入/支出欄位直接從 Recurring 表讀取計劃金額，不依賴 auto-apply 是否已執行
  */
 function handleGenerateMonthlyReport(body) {
+  const startYm = body.startYm || '';  // 格式 'YYYY-MM'，空表示全部
+  const endYm   = body.endYm   || '';
+
   const ss = SpreadsheetApp.openById(getProp('SPREADSHEET_ID'));
   const sheetName = '月報表';
   let sheet = ss.getSheetByName(sheetName);
@@ -118,10 +121,12 @@ function handleGenerateMonthlyReport(body) {
   // 只取啟用中的固定收支
   const activeRecurring = allRecurring.filter(r => String(r.is_active).toUpperCase() === 'TRUE');
 
-  // 取得所有月份並排序（從 Transactions 取）
+  // 取得所有月份並排序（從 Transactions 取），依範圍篩選
   const monthSet = new Set();
   allTxns.forEach(r => { if (r.date && r.date.length >= 7) monthSet.add(r.date.substring(0, 7)); });
-  const months = Array.from(monthSet).sort();
+  let months = Array.from(monthSet).sort();
+  if (startYm) months = months.filter(ym => ym >= startYm);
+  if (endYm)   months = months.filter(ym => ym <= endYm);
 
   // 寫入標題
   sheet.appendRow(['月份', '實際收入', '實際支出', '結餘', '計劃固定收入', '計劃固定支出', '日常收入', '日常支出']);

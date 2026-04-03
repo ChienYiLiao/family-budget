@@ -110,11 +110,77 @@ const StatsPage = (() => {
     }
   }
 
-  async function _generateReport() {
+  function _generateReport() {
+    const now = new Date();
+    const thisYear  = now.getFullYear();
+    const thisMonth = now.getMonth() + 1;
+
+    // 建立月份範圍選擇 Modal
+    const id = 'report-range-modal';
+    let overlay = document.getElementById(id);
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = id;
+      overlay.className = 'modal-overlay';
+      overlay.onclick = e => { if (e.target === overlay) Modal.hide(id); };
+      document.body.appendChild(overlay);
+    }
+
+    const yearOpts = [thisYear - 2, thisYear - 1, thisYear]
+      .map(y => `<option value="${y}" ${y === thisYear - 1 ? 'selected' : ''}>${y}</option>`).join('');
+    const monthOpts = Array.from({length: 12}, (_, i) => i + 1)
+      .map(m => `<option value="${m}" ${m === 1 ? 'selected' : ''}>${m} 月</option>`).join('');
+    const endMonthOpts = Array.from({length: 12}, (_, i) => i + 1)
+      .map(m => `<option value="${m}" ${m === thisMonth ? 'selected' : ''}>${m} 月</option>`).join('');
+    const endYearOpts = [thisYear - 2, thisYear - 1, thisYear]
+      .map(y => `<option value="${y}" ${y === thisYear ? 'selected' : ''}>${y}</option>`).join('');
+
+    overlay.innerHTML = `
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title">產生月報表</div>
+        <div style="font-size:13px;color:var(--color-text-muted);margin-bottom:16px;line-height:1.6;">
+          選擇要產生的月份範圍。每次產生會覆蓋整張報表，資料來源為交易記錄，隨時可重新產生。
+        </div>
+        <div class="form-group">
+          <div class="form-label">起始月份</div>
+          <div style="display:flex;gap:8px;">
+            <select class="form-input" id="rpt-start-year" style="flex:1;">${yearOpts}</select>
+            <select class="form-input" id="rpt-start-month" style="flex:1;">${monthOpts}</select>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">結束月份</div>
+          <div style="display:flex;gap:8px;">
+            <select class="form-input" id="rpt-end-year" style="flex:1;">${endYearOpts}</select>
+            <select class="form-input" id="rpt-end-month" style="flex:1;">${endMonthOpts}</select>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:8px;">
+          <button class="btn btn-secondary btn-block" onclick="Modal.hide('${id}')">取消</button>
+          <button class="btn btn-primary btn-block" onclick="StatsPage._confirmGenerateReport()">產生</button>
+        </div>
+      </div>
+    `;
+    Modal.show(id);
+  }
+
+  async function _confirmGenerateReport() {
+    const startYear  = parseInt(document.getElementById('rpt-start-year').value);
+    const startMonth = parseInt(document.getElementById('rpt-start-month').value);
+    const endYear    = parseInt(document.getElementById('rpt-end-year').value);
+    const endMonth   = parseInt(document.getElementById('rpt-end-month').value);
+
+    const startYm = `${startYear}-${String(startMonth).padStart(2,'0')}`;
+    const endYm   = `${endYear}-${String(endMonth).padStart(2,'0')}`;
+
+    if (startYm > endYm) { Toast.error('起始月份不能晚於結束月份'); return; }
+
+    Modal.hide('report-range-modal');
     Loader.show('產生月報表中...');
     try {
-      await API.generateMonthlyReport();
-      Toast.success('月報表已產生至 Google Sheets！');
+      const result = await API.generateMonthlyReport({ startYm, endYm });
+      Toast.success(`月報表已產生！共 ${result.months} 個月`);
     } catch(err) {
       Toast.error('產生失敗：' + err.message);
     } finally {
@@ -249,5 +315,5 @@ const StatsPage = (() => {
     }).join('');
   }
 
-  return { show, hide, _load, _generateReport };
+  return { show, hide, _load, _generateReport, _confirmGenerateReport };
 })();
