@@ -42,6 +42,10 @@ const CONFIG = {
     { name: '玩樂',   emoji: '🎮' },
     { name: '投資',   emoji: '📈' },
     { name: '拜拜',   emoji: '🙏' },
+    { name: '水費',   emoji: '💧' },
+    { name: '電費',   emoji: '⚡' },
+    { name: '瓦斯費', emoji: '🔥' },
+    { name: '保險',   emoji: '🛡️' },
     { name: '其他',   emoji: '📦' }
   ],
 
@@ -66,12 +70,7 @@ const CONFIG = {
   RECURRING_EXPENSE_CATEGORIES: [
     { name: '房貸',       emoji: '🏠' },
     { name: '房租',       emoji: '🔑' },
-    { name: '保險',       emoji: '🛡️' },
-    { name: '水費',       emoji: '💧' },
-    { name: '電費',       emoji: '⚡' },
-    { name: '瓦斯費',     emoji: '🔥' },
     { name: '電話費',     emoji: '📱' },
-    { name: '保險費',     emoji: '📋' },
     { name: '定期定額股票', emoji: '📊' },
     { name: '現金儲蓄',   emoji: '🐷' }
   ],

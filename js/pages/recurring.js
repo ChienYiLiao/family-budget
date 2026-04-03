@@ -155,7 +155,7 @@ const RecurringPage = (() => {
         </select>
       </div>
       <div class="form-group">
-        <div class="form-label">每月幾號入帳</div>
+        <div class="form-label">每月幾號出入帳</div>
         <select class="form-input" id="rec-form-dom">
           ${Array.from({length:28},(_,i)=>i+1).map(d =>
             `<option value="${d}" ${d===(parseInt(prefill.day_of_month)||1)?'selected':''}>${d} 日</option>`

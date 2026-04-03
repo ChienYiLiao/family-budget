@@ -1,24 +1,24 @@
 :root {
-  /* ── 深色主題色系 ─────────────────────────────────────────────────────────── */
-  --color-bg:           #0d0d1a;
-  --color-bg-card:      #16162a;
-  --color-bg-elevated:  #1e1e38;
-  --color-bg-input:     #1a1a30;
-  --color-primary:      #7c6fff;
-  --color-primary-light:#9d94ff;
-  --color-primary-dark: #5a52d5;
-  --color-secondary:    #ff6584;
-  --color-income:       #4ecb8d;
-  --color-expense:      #ff6b6b;
-  --color-text:         #e8e8f8;
-  --color-text-muted:   #7070a0;
-  --color-border:       #2a2a48;
-  --color-shadow:       rgba(0,0,0,0.4);
+  /* ── 莫蘭迪深色主題 ──────────────────────────────────────────────────────── */
+  --color-bg:           #1c1b24;
+  --color-bg-card:      #25242f;
+  --color-bg-elevated:  #2e2d3a;
+  --color-bg-input:     #2a2935;
+  --color-primary:      #9b8fb0;   /* 莫蘭迪薰衣草紫 */
+  --color-primary-light:#b8aecf;
+  --color-primary-dark: #7a6e92;
+  --color-secondary:    #c09898;   /* 莫蘭迪玫瑰粉 */
+  --color-income:       #7aaa8e;   /* 莫蘭迪鼠尾草綠 */
+  --color-expense:      #c28a8a;   /* 莫蘭迪藕荷紅 */
+  --color-text:         #ddd8e8;   /* 溫白 */
+  --color-text-muted:   #8e8aa2;   /* 霧灰紫 */
+  --color-border:       #343340;
+  --color-shadow:       rgba(0,0,0,0.35);
 
   /* 支付方式 */
-  --color-cash:         #f59e0b;
-  --color-credit-card:  #60a5fa;
-  --color-easy-card:    #34d399;
+  --color-cash:         #c4a87a;   /* 莫蘭迪暖金 */
+  --color-credit-card:  #7a9ab5;   /* 莫蘭迪霧藍 */
+  --color-easy-card:    #7aaa8e;   /* 莫蘭迪鼠尾草綠 */
 
   /* 間距 */
   --space-xs:  4px;

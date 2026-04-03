@@ -94,7 +94,7 @@ const DashboardPage = (() => {
       </div>
 
       <!-- 最近記帳 -->
-      <div style="padding:0 16px 16px;">
+      <div style="padding:0 16px;">
         <div class="card">
           <div class="card-header">
             <div class="card-title">最近記帳</div>
@@ -102,6 +102,19 @@ const DashboardPage = (() => {
           </div>
           <div id="dash-recent-list" class="txn-list">
             <div class="loader-spinner" style="margin:16px auto;width:24px;height:24px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 使用說明書 -->
+      <div style="padding:0 16px 24px;">
+        <div class="card">
+          <div class="card-header" style="cursor:pointer;" onclick="DashboardPage._toggleGuide()">
+            <div class="card-title">📖 使用說明書</div>
+            <div id="dash-guide-arrow" style="color:var(--color-text-muted);font-size:14px;transition:transform 0.2s;">▼</div>
+          </div>
+          <div id="dash-guide-body" style="display:none;">
+            ${_guideHTML()}
           </div>
         </div>
       </div>
@@ -139,7 +152,7 @@ const DashboardPage = (() => {
       return;
     }
     const top5 = categories.slice(0, 5);
-    const colors = ['#6c63ff','#ff6b6b','#4caf88','#f59e0b','#3b82f6'];
+    const colors = ['#9b8fb0','#c28a8a','#7aaa8e','#c4a87a','#7a9ab5'];
 
     if (_chartPie) { _chartPie.destroy(); _chartPie = null; }
     const ctx = document.getElementById('dash-pie-chart');
@@ -193,8 +206,8 @@ const DashboardPage = (() => {
         labels: labels.map(d => `${d}`),
         datasets: [{
           data: amounts,
-          backgroundColor: '#6c63ff40',
-          borderColor: '#6c63ff',
+          backgroundColor: 'rgba(155,143,176,0.2)',
+          borderColor: '#9b8fb0',
           borderWidth: 1,
           borderRadius: 3
         }]
@@ -207,7 +220,7 @@ const DashboardPage = (() => {
         }},
         scales: {
           x: { grid: { display: false }, ticks: { font: { size: 10 }, maxTicksLimit: 10 } },
-          y: { grid: { color: '#f0f0f8' }, ticks: { font: { size: 10 }, callback: v => v > 0 ? `$${v/1000}k` : '$0' } }
+          y: { grid: { color: '#2e2d3a' }, ticks: { font: { size: 10 }, callback: v => v > 0 ? `$${v/1000}k` : '$0' } }
         }
       }
     });
@@ -245,5 +258,63 @@ const DashboardPage = (() => {
     `;
   }
 
-  return { show, hide };
+  function _guideHTML() {
+    const sections = [
+      {
+        icon: '✏️', title: '手動記帳',
+        desc: '點擊底部「記帳」按鈕，選擇支出或收入，填入金額、類別、支付方式與日期後按「確認記帳」。'
+      },
+      {
+        icon: '📷', title: '掃描收據',
+        desc: '點擊底部「掃描」按鈕，拍攝或上傳收據圖片，AI 會自動識別金額、店名與日期，確認後一鍵記帳。'
+      },
+      {
+        icon: '🔁', title: '固定收支（快速記帳）',
+        desc: '點「記帳」→「🔁 固定」Tab，可看到所有固定項目。點擊後彈出確認視窗，金額可直接修改，適合水電費等每月變動的項目。'
+      },
+      {
+        icon: '⚙️', title: '固定收支管理',
+        desc: '從「記帳 → 🔁 固定 → 管理 →」進入，可新增、啟用/停用、刪除固定項目。固定支出類別包含：房貸、房租、電話費、定期定額、儲蓄。'
+      },
+      {
+        icon: '📋', title: '歷史記錄',
+        desc: '點底部「記錄」查看每月記帳明細，可依類型與類別篩選。點擊單筆記帳可查看詳情或刪除。'
+      },
+      {
+        icon: '📊', title: '統計分析',
+        desc: '點底部「統計」查看月趨勢圖、支付方式佔比、類別排名與本期 Top 10 大額消費。可勾選「排除固定收支」看日常開銷，也可點「產生月報表」更新 Google Sheets 報表。'
+      },
+      {
+        icon: '🖼️', title: '更換頭像',
+        desc: '回到登入畫面，長按自己的頭像即可從相機拍攝或從相簿選擇，裁切後直接套用，無需上傳至後端。'
+      }
+    ];
+    return `
+      <div style="padding-top:4px;padding-bottom:4px;">
+        ${sections.map(s => `
+          <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--color-border);">
+            <div style="font-size:22px;flex-shrink:0;width:28px;text-align:center;">${s.icon}</div>
+            <div>
+              <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${s.title}</div>
+              <div style="font-size:13px;color:var(--color-text-muted);line-height:1.6;">${s.desc}</div>
+            </div>
+          </div>
+        `).join('')}
+        <div style="text-align:center;padding-top:12px;font-size:12px;color:var(--color-text-muted);">
+          有問題找豬豬 🐷
+        </div>
+      </div>
+    `;
+  }
+
+  function _toggleGuide() {
+    const body  = document.getElementById('dash-guide-body');
+    const arrow = document.getElementById('dash-guide-arrow');
+    if (!body) return;
+    const isOpen = body.style.display !== 'none';
+    body.style.display  = isOpen ? 'none' : 'block';
+    if (arrow) arrow.style.transform = isOpen ? '' : 'rotate(180deg)';
+  }
+
+  return { show, hide, _toggleGuide };
 })();
