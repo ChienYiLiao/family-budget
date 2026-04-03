@@ -17,8 +17,9 @@ function handleScanReceipt(body) {
     return { success: false, error: '後端未設定 Gemini API Key，請聯絡管理員' };
   }
 
-  // Gemini Flash Latest 原生視覺：直接送圖片 + prompt，不需 Vision API
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${geminiKey}`;
+  // Gemini 2.0 Flash：穩定版本，不使用 alias 避免尖峰流量問題
+  const GEMINI_MODEL = 'gemini-2.0-flash';
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey}`;
 
   const prompt = `你是一個專業的繁體中文發票/收據解析助手。
 請仔細分析這張發票或收據圖片，提取所有可見的資訊。
@@ -59,15 +60,28 @@ function handleScanReceipt(body) {
     }
   };
 
-  let geminiRes, geminiData;
-  try {
-    geminiRes = UrlFetchApp.fetch(geminiUrl, {
+  // 呼叫 Gemini，過載時自動重試一次（換備用模型）
+  function _callGemini(url, payload) {
+    return UrlFetchApp.fetch(url, {
       method: 'post',
       contentType: 'application/json',
-      payload: JSON.stringify(geminiPayload),
+      payload: JSON.stringify(payload),
       muteHttpExceptions: true
     });
+  }
+
+  let geminiRes, geminiData;
+  try {
+    geminiRes = _callGemini(geminiUrl, geminiPayload);
     geminiData = JSON.parse(geminiRes.getContentText());
+
+    // 若遇到 503 過載，自動 retry 一次（用備用模型）
+    if (geminiData.error && geminiData.error.code === 503) {
+      Utilities.sleep(2000);
+      const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
+      geminiRes  = _callGemini(fallbackUrl, geminiPayload);
+      geminiData = JSON.parse(geminiRes.getContentText());
+    }
   } catch(e) {
     _logReceipt(userId, '', '', 'failed', 'Gemini fetch 失敗: ' + e.message, '');
     return { success: false, error: 'AI 服務連線失敗，請稍後再試' };
@@ -77,7 +91,7 @@ function handleScanReceipt(body) {
   if (geminiData.error) {
     const errMsg = geminiData.error.message || JSON.stringify(geminiData.error);
     _logReceipt(userId, '', '', 'failed', 'Gemini API 錯誤: ' + errMsg, '');
-    return { success: false, error: 'AI API 錯誤：' + errMsg };
+    return { success: false, error: 'AI 暫時忙碌，請稍後再試一次' };
   }
 
   let parsed = null;

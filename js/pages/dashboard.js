@@ -107,10 +107,17 @@ const DashboardPage = (() => {
       </div>
 
       <!-- 使用說明書 -->
-      <div style="padding:0 16px 24px;">
-        <div class="card">
-          <div class="card-header" style="cursor:pointer;" onclick="DashboardPage._toggleGuide()">
-            <div class="card-title">📖 使用說明書</div>
+      <div style="padding:8px 16px 32px;">
+        <div style="border-top:2px dashed var(--color-border);margin-bottom:16px;"></div>
+        <div class="card" style="background:var(--color-bg-elevated);border:1px solid var(--color-border);">
+          <div class="card-header" style="cursor:pointer;padding-bottom:12px;" onclick="DashboardPage._toggleGuide()">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:18px;">📖</span>
+              <div>
+                <div class="card-title" style="font-size:15px;">使用說明書</div>
+                <div style="font-size:11px;color:var(--color-text-muted);margin-top:1px;">點擊展開功能介紹</div>
+              </div>
+            </div>
             <div id="dash-guide-arrow" style="color:var(--color-text-muted);font-size:14px;transition:transform 0.2s;">▼</div>
           </div>
           <div id="dash-guide-body" style="display:none;">
