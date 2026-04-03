@@ -17,8 +17,8 @@ function handleScanReceipt(body) {
     return { success: false, error: '後端未設定 Gemini API Key，請聯絡管理員' };
   }
 
-  // Gemini 2.0 Flash：穩定版本，不使用 alias 避免尖峰流量問題
-  const GEMINI_MODEL = 'gemini-2.0-flash';
+  // Gemini 2.0 Flash Lite：免費層可用的穩定版本
+  const GEMINI_MODEL = 'gemini-2.0-flash-lite';
   const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey}`;
 
   const prompt = `你是一個專業的繁體中文發票/收據解析助手。
@@ -78,7 +78,7 @@ function handleScanReceipt(body) {
     // 若遇到 503 過載，自動 retry 一次（用備用模型）
     if (geminiData.error && geminiData.error.code === 503) {
       Utilities.sleep(2000);
-      const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
+      const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent?key=${geminiKey}`;
       geminiRes  = _callGemini(fallbackUrl, geminiPayload);
       geminiData = JSON.parse(geminiRes.getContentText());
     }
