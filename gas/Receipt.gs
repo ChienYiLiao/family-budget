@@ -17,9 +17,15 @@ function handleScanReceipt(body) {
     return { success: false, error: '後端未設定 Gemini API Key，請聯絡管理員' };
   }
 
-  // gemini-1.5-flash-latest：tokyo-expense 驗證可用的版本
-  const GEMINI_MODEL = 'gemini-1.5-flash-latest';
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey}`;
+  // 使用 v1 正式版 API + 依序嘗試可用模型
+  const GEMINI_MODELS = [
+    'gemini-1.5-flash',
+    'gemini-1.5-flash-001',
+    'gemini-1.5-pro',
+    'gemini-1.0-pro-vision-001'
+  ];
+  const GEMINI_API_VER = 'v1';
+  const geminiUrl = `https://generativelanguage.googleapis.com/${GEMINI_API_VER}/models/${GEMINI_MODELS[0]}:generateContent?key=${geminiKey}`;
 
   const prompt = `你是一個專業的繁體中文發票/收據解析助手。
 請仔細分析這張發票或收據圖片，提取所有可見的資訊。
@@ -75,12 +81,22 @@ function handleScanReceipt(body) {
     geminiRes = _callGemini(geminiUrl, geminiPayload);
     geminiData = JSON.parse(geminiRes.getContentText());
 
-    // 若遇到 503 過載，自動 retry 一次（用備用模型）
-    if (geminiData.error && geminiData.error.code === 503) {
-      Utilities.sleep(2000);
-      const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent?key=${geminiKey}`;
-      geminiRes  = _callGemini(fallbackUrl, geminiPayload);
-      geminiData = JSON.parse(geminiRes.getContentText());
+    // 若模型不可用（404/503），依序嘗試備用模型
+    if (geminiData.error) {
+      const errCode = geminiData.error.code || geminiData.error.status;
+      const isModelErr = errCode === 404 || errCode === 503 ||
+        (geminiData.error.message || '').includes('not found') ||
+        (geminiData.error.message || '').includes('deprecated') ||
+        (geminiData.error.message || '').includes('no longer');
+      if (isModelErr) {
+        for (let i = 1; i < GEMINI_MODELS.length; i++) {
+          Utilities.sleep(1000);
+          const fallbackUrl = `https://generativelanguage.googleapis.com/${GEMINI_API_VER}/models/${GEMINI_MODELS[i]}:generateContent?key=${geminiKey}`;
+          geminiRes  = _callGemini(fallbackUrl, geminiPayload);
+          geminiData = JSON.parse(geminiRes.getContentText());
+          if (!geminiData.error) break;
+        }
+      }
     }
   } catch(e) {
     _logReceipt(userId, '', '', 'failed', 'Gemini fetch 失敗: ' + e.message, '');
