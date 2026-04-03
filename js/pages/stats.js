@@ -78,6 +78,14 @@ const StatsPage = (() => {
         </div>
         <div class="category-rank-list" id="stats-category-rank"></div>
       </div>
+
+      <!-- 單項消費 Top 10 -->
+      <div class="card section">
+        <div class="card-header">
+          <div class="card-title">本期最大消費 Top 10</div>
+        </div>
+        <div id="stats-top-txns"></div>
+      </div>
     `;
   }
 
@@ -94,6 +102,7 @@ const StatsPage = (() => {
       _renderTrendChart(data.monthlyTrend);
       _renderPayChart(data.paymentMethodBreakdown);
       _renderCategoryRank(data.categoryBreakdown);
+      _renderTopTransactions(data.topTransactions);
     } catch(err) {
       Toast.error('載入失敗：' + err.message);
     } finally {
@@ -212,6 +221,32 @@ const StatsPage = (() => {
         <div class="category-rank-amount">${Utils.formatAmount(c.total)}</div>
       </div>
     `).join('');
+  }
+
+  function _renderTopTransactions(txns) {
+    const el = document.getElementById('stats-top-txns');
+    if (!el) return;
+    if (!txns || !txns.length) {
+      el.innerHTML = '<div style="color:var(--color-text-muted);font-size:13px;">尚無資料</div>';
+      return;
+    }
+    el.innerHTML = txns.map((t, i) => {
+      const emoji = CONFIG.getCategoryEmoji(t.category);
+      const user  = CONFIG.USERS[t.user_id];
+      const userEmoji = user ? user.emoji : '👤';
+      const label = t.note || t.category;
+      return `
+        <div class="txn-item" style="margin-bottom:6px;">
+          <div style="font-size:13px;font-weight:700;color:var(--color-text-muted);width:20px;text-align:center;">${i+1}</div>
+          <div class="txn-cat-icon" style="margin-left:4px;">${emoji}</div>
+          <div class="txn-info">
+            <div class="txn-category">${label}</div>
+            <div class="txn-note">${t.date} ${userEmoji}</div>
+          </div>
+          <div class="txn-amount expense">-${Utils.formatAmount(t.amount)}</div>
+        </div>
+      `;
+    }).join('');
   }
 
   return { show, hide, _load, _generateReport };

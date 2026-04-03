@@ -75,11 +75,27 @@ function handleGetStats(params) {
     monthCategory[ym] = cm;
   });
 
+  // 本期最大支出 Top 10 單項
+  const topTransactions = txns
+    .filter(r => r.date && months.includes(r.date.substring(0,7)) && r.type === 'expense')
+    .sort((a, b) => (Number(b.amount)||0) - (Number(a.amount)||0))
+    .slice(0, 10)
+    .map(r => ({
+      transaction_id: r.transaction_id,
+      date:           r.date,
+      category:       r.category || '其他',
+      note:           r.note || r.merchant_name || '',
+      amount:         Number(r.amount) || 0,
+      payment_method: r.payment_method || 'cash',
+      user_id:        r.user_id || ''
+    }));
+
   return {
     monthlyTrend,
     categoryBreakdown,
     paymentMethodBreakdown,
-    monthCategory
+    monthCategory,
+    topTransactions
   };
 }
 
