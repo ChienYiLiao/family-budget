@@ -143,19 +143,15 @@
     }
 
     async function uploadAvatar(userId, avatarKey, { base64, mimeType, dataUrl }) {
-      Loader.show('上傳頭像中...');
+      Loader.show('更新頭像中...');
       try {
-        // 先更新本地顯示
         const img = document.getElementById(`avatar-${avatarKey}`);
         if (img) img.src = dataUrl;
-
-        const result = await API.updateAvatar(userId, base64, mimeType);
-        State.saveAvatarCache(userId, result.avatarUrl);
-        // 更新顯示為 Drive URL
-        if (img) img.src = result.avatarUrl;
+        // 直接存 localStorage，不需上傳至後端
+        State.saveAvatarCache(userId, dataUrl);
         Toast.success('頭像更新成功！');
       } catch (err) {
-        Toast.error('頭像上傳失敗：' + err.message);
+        Toast.error('頭像更新失敗：' + err.message);
       } finally {
         Loader.hide();
       }

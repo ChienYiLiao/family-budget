@@ -56,9 +56,10 @@ const CONFIG = {
 
   // ── 支付方式 ──────────────────────────────────────────────────────────────
   PAYMENT_METHODS: [
-    { key: 'cash',        label: '現金',  emoji: '💵' },
-    { key: 'credit_card', label: '信用卡', emoji: '💳' },
-    { key: 'easy_card',   label: '悠遊卡', emoji: '🎫' }
+    { key: 'cash',          label: '現金',  emoji: '💵' },
+    { key: 'credit_card',   label: '信用卡', emoji: '💳' },
+    { key: 'easy_card',     label: '悠遊卡', emoji: '🎫' },
+    { key: 'bank_transfer', label: '轉帳',  emoji: '🏦' }
   ],
 
   // ── 固定支出類別 ──────────────────────────────────────────────────────────

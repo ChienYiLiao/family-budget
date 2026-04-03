@@ -29,7 +29,7 @@ const StatsPage = (() => {
     const page = document.getElementById(PAGE_ID);
     page.innerHTML = `
       <!-- 篩選 -->
-      <div class="stats-filter" style="margin-bottom:16px;">
+      <div class="stats-filter" style="margin-bottom:8px;">
         <div style="font-size:13px;font-weight:600;color:var(--color-text-muted);">從</div>
         <select class="form-input" id="stats-start-year" style="flex:1;padding:8px 12px;" onchange="StatsPage._load()">
           ${[thisYear-1, thisYear].map(y=>`<option value="${y}" ${y===s.year?'selected':''}>${y}</option>`).join('')}
@@ -38,6 +38,14 @@ const StatsPage = (() => {
           ${Array.from({length:12},(_,i)=>i+1).map(m=>`<option value="${m}" ${m===s.month?'selected':''}>${m} 月</option>`).join('')}
         </select>
         <div style="font-size:13px;font-weight:600;color:var(--color-text-muted);">至 ${thisYear}/${thisMonth}</div>
+      </div>
+      <!-- 固定收支 toggle -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 12px;background:var(--color-bg-card);border-radius:10px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;font-size:13px;color:var(--color-text-muted);">
+          <input type="checkbox" id="stats-exclude-recurring" onchange="StatsPage._load()" style="width:16px;height:16px;accent-color:var(--color-primary);">
+          排除固定收支項目
+        </label>
+        <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="StatsPage._generateReport()">產生月報表</button>
       </div>
 
       <!-- 月趨勢 -->
@@ -78,15 +86,28 @@ const StatsPage = (() => {
     const startMonth = parseInt(document.getElementById('stats-start-month').value);
     const now = new Date();
     const endYear = now.getFullYear(), endMonth = now.getMonth() + 1;
+    const excludeRecurring = document.getElementById('stats-exclude-recurring')?.checked ? 'true' : 'false';
 
     Loader.show('統計中...');
     try {
-      const data = await API.getStats({ startYear, startMonth, endYear, endMonth });
+      const data = await API.getStats({ startYear, startMonth, endYear, endMonth, excludeRecurring });
       _renderTrendChart(data.monthlyTrend);
       _renderPayChart(data.paymentMethodBreakdown);
       _renderCategoryRank(data.categoryBreakdown);
     } catch(err) {
       Toast.error('載入失敗：' + err.message);
+    } finally {
+      Loader.hide();
+    }
+  }
+
+  async function _generateReport() {
+    Loader.show('產生月報表中...');
+    try {
+      await API.generateMonthlyReport();
+      Toast.success('月報表已產生至 Google Sheets！');
+    } catch(err) {
+      Toast.error('產生失敗：' + err.message);
     } finally {
       Loader.hide();
     }
@@ -143,8 +164,8 @@ const StatsPage = (() => {
     const ctx = document.getElementById('stats-pay-chart');
     if (!ctx || !payData || !payData.length) return;
 
-    const colorMap = { cash: '#f59e0b', credit_card: '#3b82f6', easy_card: '#10b981' };
-    const labelMap = { cash: '現金', credit_card: '信用卡', easy_card: '悠遊卡' };
+    const colorMap = { cash: '#f59e0b', credit_card: '#3b82f6', easy_card: '#10b981', bank_transfer: '#a855f7' };
+    const labelMap = { cash: '現金', credit_card: '信用卡', easy_card: '悠遊卡', bank_transfer: '轉帳' };
 
     _chartPay = new Chart(ctx, {
       type: 'doughnut',
@@ -193,5 +214,5 @@ const StatsPage = (() => {
     `).join('');
   }
 
-  return { show, hide, _load };
+  return { show, hide, _load, _generateReport };
 })();

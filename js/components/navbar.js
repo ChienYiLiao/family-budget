@@ -37,12 +37,12 @@ const Navbar = {
         </svg>
         <span>統計</span>
       </a>
-      <a class="navbar-item" data-route="recurring" href="#recurring">
+      <a class="navbar-item" data-route="scan" href="#scan">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/>
-          <path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/>
+          <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/>
+          <rect x="7" y="7" width="10" height="10" rx="1"/>
         </svg>
-        <span>固定</span>
+        <span>掃描</span>
       </a>
     `;
   }

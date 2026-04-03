@@ -217,38 +217,87 @@ const AddPage = (() => {
     el.innerHTML = renderGroup(income, 'income') + renderGroup(expense, 'expense');
   }
 
+  // 顯示固定收支確認 modal（含可編輯金額）
+  function _showQuickRecordModal(item, onConfirm) {
+    const id = 'quick-record-modal';
+    let overlay = document.getElementById(id);
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = id;
+      overlay.className = 'modal-overlay';
+      document.body.appendChild(overlay);
+    }
+    const typeColor = item.type === 'income' ? 'var(--color-income)' : 'var(--color-expense)';
+    const emoji = CONFIG.getCategoryEmoji(item.category);
+    overlay.innerHTML = `
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title">快速記帳</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <div style="font-size:32px;">${emoji}</div>
+          <div>
+            <div style="font-weight:700;">${item.name || item.category}</div>
+            <div style="font-size:12px;color:var(--color-text-muted);">每月 ${item.day_of_month} 日・${CONFIG.getPaymentLabel(item.payment_method)}</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">金額（可修改）</div>
+          <div class="amount-display" style="margin-bottom:0;">
+            <span class="amount-prefix" style="color:${typeColor};">$</span>
+            <input type="number" inputmode="decimal" id="qr-amount" class="form-input-amount"
+                   value="${item.amount}" min="0" style="color:${typeColor};">
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">日期</div>
+          <input type="date" id="qr-date" class="form-input" value="${Utils.today()}" max="${Utils.today()}">
+        </div>
+        <div style="display:flex;gap:12px;margin-top:8px;">
+          <button class="btn btn-secondary btn-block" id="qr-cancel">取消</button>
+          <button class="btn btn-primary btn-block" id="qr-confirm">確定記帳</button>
+        </div>
+      </div>
+    `;
+    overlay.onclick = e => { if (e.target === overlay) Modal.hide(id); };
+    document.getElementById('qr-cancel').onclick = () => Modal.hide(id);
+    document.getElementById('qr-confirm').onclick = () => {
+      const amount = parseFloat(document.getElementById('qr-amount').value);
+      const date   = document.getElementById('qr-date').value || Utils.today();
+      if (!amount || amount <= 0) { Toast.error('請輸入有效金額'); return; }
+      Modal.hide(id);
+      onConfirm(amount, date);
+    };
+    Modal.show(id);
+  }
+
   async function _quickRecord(recurringId) {
     const item = _recurringItems.find(r => r.recurring_id === recurringId);
     if (!item) return;
     const user = State.getState().currentUser;
     if (!user) { Toast.error('請先選擇使用者'); return; }
 
-    const ok = await Modal.confirm(
-      `確定記帳「${item.name || item.category}」${Utils.formatAmount(item.amount)}？`,
-      { confirmText: '確定記帳' }
-    );
-    if (!ok) return;
-
-    Loader.show('記帳中...');
-    try {
-      await API.addTransaction({
-        user_id:        user.userId,
-        type:           item.type,
-        amount:         item.amount,
-        category:       item.category,
-        payment_method: item.payment_method,
-        note:           `固定：${item.name || item.category}`,
-        merchant_name:  '',
-        receipt_source: 'recurring',
-        date:           Utils.today()
-      });
-      State.invalidateTransactionCache();
-      Toast.success('記帳成功！');
-    } catch(err) {
-      Toast.error('記帳失敗：' + err.message);
-    } finally {
-      Loader.hide();
-    }
+    _showQuickRecordModal(item, async (amount, date) => {
+      Loader.show('記帳中...');
+      try {
+        await API.addTransaction({
+          user_id:        user.userId,
+          type:           item.type,
+          amount,
+          category:       item.category,
+          payment_method: item.payment_method,
+          note:           `固定：${item.name || item.category}`,
+          merchant_name:  '',
+          receipt_source: 'recurring',
+          date
+        });
+        State.invalidateTransactionCache();
+        Toast.success('記帳成功！');
+      } catch(err) {
+        Toast.error('記帳失敗：' + err.message);
+      } finally {
+        Loader.hide();
+      }
+    });
   }
 
   async function _submit() {

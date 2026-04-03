@@ -66,8 +66,9 @@ function handleAction(body) {
       case 'deleteRecurring':   return jsonRes({ ok: true, data: handleDeleteRecurring(body) });
       case 'toggleRecurring':   return jsonRes({ ok: true, data: handleToggleRecurring(body) });
       case 'applyRecurring':    return jsonRes({ ok: true, data: handleApplyRecurring(body) });
-      case 'scanReceipt':       return jsonRes({ ok: true, data: handleScanReceipt(body) });
-      default:                  return jsonRes({ ok: false, error: 'Unknown action: ' + action });
+      case 'scanReceipt':             return jsonRes({ ok: true, data: handleScanReceipt(body) });
+      case 'generateMonthlyReport':   return jsonRes({ ok: true, data: handleGenerateMonthlyReport(body) });
+      default:                        return jsonRes({ ok: false, error: 'Unknown action: ' + action });
     }
   } catch(err) {
     return jsonRes({ ok: false, error: err.message });

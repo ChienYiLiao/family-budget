@@ -100,6 +100,11 @@ const API = (() => {
       return get('getStats', params);
     },
 
+    // ── 統計 ────────────────────────────────────────────────────────────────
+    generateMonthlyReport() {
+      return write('generateMonthlyReport', {});
+    },
+
     // ── 收據掃描：圖片 base64 → 改用 POST ──────────────────────────────────
     scanReceipt(userId, base64, mimeType) {
       return post('scanReceipt', { user_id: userId, imageBase64: base64, mimeType });

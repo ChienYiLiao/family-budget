@@ -5,7 +5,11 @@
 function handleGetStats(params) {
   const allTxns = readAllRows('TRANSACTIONS');
   const userId = params.userId || null;
-  const txns = userId ? allTxns.filter(r => r.user_id === userId) : allTxns;
+  const excludeRecurring = params.excludeRecurring === 'true';
+  let txns = userId ? allTxns.filter(r => r.user_id === userId) : allTxns;
+  if (excludeRecurring) {
+    txns = txns.filter(r => r.receipt_source !== 'recurring');
+  }
 
   // 月份範圍
   const startYear  = parseInt(params.startYear  || new Date().getFullYear());
@@ -77,4 +81,43 @@ function handleGetStats(params) {
     paymentMethodBreakdown,
     monthCategory
   };
+}
+
+/**
+ * 產生月報表 Sheet（寫入「月報表」分頁）
+ */
+function handleGenerateMonthlyReport(body) {
+  const ss = SpreadsheetApp.openById(getProp('SPREADSHEET_ID'));
+  const sheetName = '月報表';
+  let sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+  } else {
+    sheet.clearContents();
+  }
+
+  const allTxns = readAllRows('TRANSACTIONS');
+
+  // 取得所有月份並排序
+  const monthSet = new Set();
+  allTxns.forEach(r => { if (r.date && r.date.length >= 7) monthSet.add(r.date.substring(0, 7)); });
+  const months = Array.from(monthSet).sort();
+
+  // 寫入標題
+  sheet.appendRow(['月份', '收入', '支出', '結餘', '固定收入', '固定支出', '日常收入', '日常支出']);
+
+  months.forEach(ym => {
+    const mt = allTxns.filter(r => r.date && r.date.startsWith(ym));
+    const income  = mt.filter(r => r.type === 'income' ).reduce((s, r) => s + (Number(r.amount)||0), 0);
+    const expense = mt.filter(r => r.type === 'expense').reduce((s, r) => s + (Number(r.amount)||0), 0);
+    const recurIncome  = mt.filter(r => r.type === 'income'  && r.receipt_source === 'recurring').reduce((s, r) => s + (Number(r.amount)||0), 0);
+    const recurExpense = mt.filter(r => r.type === 'expense' && r.receipt_source === 'recurring').reduce((s, r) => s + (Number(r.amount)||0), 0);
+    sheet.appendRow([ym, income, expense, income - expense, recurIncome, recurExpense, income - recurIncome, expense - recurExpense]);
+  });
+
+  // 加粗標題列
+  sheet.getRange(1, 1, 1, 8).setFontWeight('bold');
+  sheet.setFrozenRows(1);
+
+  return { sheetName, months: months.length };
 }
