@@ -440,9 +440,10 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
   transition: var(--transition-fast);
   text-align: center;
 }
-.payment-btn.selected.cash        { background: rgba(245,158,11,0.12);  border-color: var(--color-cash);        color: var(--color-cash); }
-.payment-btn.selected.credit_card { background: rgba(96,165,250,0.12);  border-color: var(--color-credit-card); color: var(--color-credit-card); }
-.payment-btn.selected.easy_card   { background: rgba(52,211,153,0.12);  border-color: var(--color-easy-card);   color: var(--color-easy-card); }
+.payment-btn.selected.cash          { background: rgba(196,168,122,0.12); border-color: var(--color-cash);          color: var(--color-cash); }
+.payment-btn.selected.credit_card   { background: rgba(122,154,181,0.12); border-color: var(--color-credit-card);   color: var(--color-credit-card); }
+.payment-btn.selected.easy_card     { background: rgba(122,170,142,0.12); border-color: var(--color-easy-card);     color: var(--color-easy-card); }
+.payment-btn.selected.bank_transfer { background: rgba(160,142,181,0.12); border-color: var(--color-bank-transfer); color: var(--color-bank-transfer); }
 
 /* ── 記帳列表項目 ────────────────────────────────────────────────────────────── */
 .txn-list { display: flex; flex-direction: column; gap: 2px; }
