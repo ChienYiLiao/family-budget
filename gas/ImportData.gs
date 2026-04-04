@@ -47,10 +47,10 @@ function importHistoricalData() {
     // ================================================================
 
     // ── 1月 ────────────────────────────────────────────────────────
-    r('2026-01-25',G,'income', 49198,'其他', BT,  '薪水-滾滾'),
-    r('2026-01-25',P,'income', 83494,'其他', BT,  '薪水-豬豬'),
-    r('2026-01-05',G,'expense',28120,'其他', BT,  '房貸'),
-    r('2026-01-05',P,'expense',22000,'其他', BT,  '房租'),
+    r('2026-01-25',G,'income', 49198,'薪水', BT,  '薪水-滾滾'),
+    r('2026-01-25',P,'income', 83494,'薪水', BT,  '薪水-豬豬'),
+    r('2026-01-05',G,'expense',28120,'房貸', BT,  '房貸'),
+    r('2026-01-05',P,'expense',22000,'房租', BT,  '房租'),
     r('2026-01-15',G,'expense', 1341,'其他', CC,  '管理費'),
     r('2026-01-15',P,'expense',  173,'水費',  CC,  '水費'),
     r('2026-01-15',P,'expense',  854,'電費',  CC,  '電費'),
@@ -62,10 +62,10 @@ function importHistoricalData() {
     r('2026-01-15',G,'expense', 3000,'投資', BT,  '存錢筒'),
 
     // ── 2月 ────────────────────────────────────────────────────────
-    r('2026-02-25',G,'income', 53977,'其他', BT,  '薪水-滾滾'),
-    r('2026-02-25',P,'income', 85994,'其他', BT,  '薪水-豬豬'),
-    r('2026-02-05',G,'expense',28120,'其他', BT,  '房貸'),
-    r('2026-02-05',P,'expense',22000,'其他', BT,  '房租'),
+    r('2026-02-25',G,'income', 53977,'薪水', BT,  '薪水-滾滾'),
+    r('2026-02-25',P,'income', 85994,'薪水', BT,  '薪水-豬豬'),
+    r('2026-02-05',G,'expense',28120,'房貸', BT,  '房貸'),
+    r('2026-02-05',P,'expense',22000,'房租', BT,  '房租'),
     r('2026-02-15',G,'expense', 1341,'其他', CC,  '管理費'),
     r('2026-02-15',G,'expense',  219,'水費',  CC,  '水費'),
     r('2026-02-15',G,'expense',  985,'電費',  CC,  '電費'),
@@ -77,10 +77,10 @@ function importHistoricalData() {
     r('2026-02-15',G,'expense', 3000,'投資', BT,  '存錢筒'),
 
     // ── 3月 ────────────────────────────────────────────────────────
-    r('2026-03-25',G,'income', 49002,'其他', BT,  '薪水-滾滾'),
-    r('2026-03-25',P,'income', 87421,'其他', BT,  '薪水-豬豬'),
-    r('2026-03-05',G,'expense',28120,'其他', BT,  '房貸'),
-    r('2026-03-05',P,'expense',22000,'其他', BT,  '房租'),
+    r('2026-03-25',G,'income', 49002,'薪水', BT,  '薪水-滾滾'),
+    r('2026-03-25',P,'income', 87421,'薪水', BT,  '薪水-豬豬'),
+    r('2026-03-05',G,'expense',28120,'房貸', BT,  '房貸'),
+    r('2026-03-05',P,'expense',22000,'房租', BT,  '房租'),
     r('2026-03-15',G,'expense', 1341,'其他', CC,  '管理費'),
     r('2026-03-15',P,'expense',   54,'水費',  CC,  '水費'),
     r('2026-03-15',P,'expense',  785,'電費',  CC,  '電費'),
@@ -90,7 +90,7 @@ function importHistoricalData() {
     r('2026-03-15',G,'expense', 3000,'投資', BT,  '存錢筒'),
 
     // ── 4月（只有房租 15000 + 投資 9000）──────────────────────────
-    r('2026-04-05',P,'expense',15000,'其他', BT,  '房租'),
+    r('2026-04-05',P,'expense',15000,'房租', BT,  '房租'),
     r('2026-04-15',P,'expense', 9000,'投資', BT,  '定期定額-證券'),
 
     // ================================================================
@@ -350,4 +350,45 @@ function importHistoricalData() {
   Logger.log(msg);
   ss.toast(msg, '歷史資料匯入', 5);
   return { imported: data.length };
+}
+
+/**
+ * 修正已匯入資料的類別欄位（只需執行一次）
+ * 問題：importHistoricalData() 將薪水/房貸/房租 的 category 設為「其他」，導致統計篩選失效
+ * 修正：依 note 欄位對應回正確的 category
+ */
+function fixImportedCategories() {
+  const ss = SpreadsheetApp.openById(getProp('SPREADSHEET_ID'));
+  const sheet = ss.getSheetByName('TRANSACTIONS');
+  if (!sheet) { Logger.log('找不到 TRANSACTIONS sheet'); return; }
+
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const catIdx = headers.indexOf('category');
+  const noteIdx = headers.indexOf('note');
+  const srcIdx  = headers.indexOf('receipt_source');
+
+  // note → 正確 category 對應表
+  const noteToCategory = {
+    '薪水-滾滾': '薪水',
+    '薪水-豬豬': '薪水',
+    '房貸':      '房貸',
+    '房租':      '房租'
+  };
+
+  let updated = 0;
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][srcIdx] !== 'import') continue;
+    const note   = data[i][noteIdx];
+    const newCat = noteToCategory[note];
+    if (newCat && data[i][catIdx] !== newCat) {
+      sheet.getRange(i + 1, catIdx + 1).setValue(newCat);
+      updated++;
+    }
+  }
+
+  const msg = '✓ 修正完成！共更新 ' + updated + ' 筆資料的類別';
+  Logger.log(msg);
+  ss.toast(msg, '類別修正', 5);
+  return updated;
 }
