@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0d0d1a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>家庭記帳本</title>
+  <title>薯條幫帳本</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/variables.css">
@@ -18,8 +18,8 @@
 </head>
 <body>
   <div id="login-page">
-    <div class="login-logo">💰</div>
-    <div class="login-title">家庭記帳本</div>
+    <div class="login-logo">🍟</div>
+    <div class="login-title">薯條幫帳本</div>
     <div class="login-subtitle">請選擇你是誰</div>
 
     <div class="login-users">
@@ -32,8 +32,8 @@
              src="assets/default-avatars/pigpig.png"
              onerror="this.src='assets/default-avatars/pigpig.png'"
              alt="豬豬">
-        <div class="login-user-name">豬豬</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.5);">長按更換頭像</div>
+        <div class="login-user-name" id="name-pigpig">豬豬</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.5);">長按更換頭像／暱稱</div>
       </div>
 
       <!-- 滾滾 -->
@@ -45,12 +45,12 @@
              src="assets/default-avatars/gungun.png"
              onerror="this.src='assets/default-avatars/gungun.png'"
              alt="滾滾">
-        <div class="login-user-name">滾滾</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.5);">長按更換頭像</div>
+        <div class="login-user-name" id="name-gungun">滾滾</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.5);">長按更換頭像／暱稱</div>
       </div>
     </div>
 
-    <div class="login-hint">長按頭像可以更換大頭貼</div>
+    <div class="login-hint">長按頭像可以更換大頭貼或暱稱</div>
   </div>
 
   <!-- Loading -->
@@ -76,14 +76,19 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
 
   <script>
-    // ── 初始化：載入頭像快取 ───────────────────────────────────────────────
+    // ── 初始化：載入頭像快取 & 暱稱 ─────────────────────────────────────────
     (function initAvatars() {
       ['user_pigpig','user_gungun'].forEach(uid => {
-        const cached = State.getAvatarCache(uid);
         const avatarKey = uid === 'user_pigpig' ? 'pigpig' : 'gungun';
+        const cached = State.getAvatarCache(uid);
         if (cached) {
           const img = document.getElementById(`avatar-${avatarKey}`);
           if (img) img.src = cached;
+        }
+        const savedName = localStorage.getItem(`nickname_${uid}`);
+        if (savedName) {
+          const nameEl = document.getElementById(`name-${avatarKey}`);
+          if (nameEl) nameEl.textContent = savedName;
         }
       });
     })();
@@ -93,9 +98,11 @@
       const cfg = CONFIG.USERS[userId];
       const avatarKey = userId === 'user_pigpig' ? 'pigpig' : 'gungun';
       const img = document.getElementById(`avatar-${avatarKey}`);
+      const nameEl = document.getElementById(`name-${avatarKey}`);
+      const savedName = localStorage.getItem(`nickname_${userId}`);
       State.saveUser({
         userId,
-        displayName: cfg.displayName,
+        displayName: savedName || (nameEl ? nameEl.textContent : cfg.displayName),
         avatarUrl: img ? img.src : cfg.defaultAvatar
       });
       window.location.href = 'app.html#dashboard';
@@ -108,38 +115,57 @@
     }
 
     function showAvatarMenu(userId, avatarKey) {
-      // 建立選擇 modal
       let overlay = document.getElementById('avatar-menu-overlay');
       if (!overlay) {
         overlay = document.createElement('div');
         overlay.id = 'avatar-menu-overlay';
         overlay.className = 'modal-overlay';
-        overlay.innerHTML = `
-          <div class="modal-sheet">
-            <div class="modal-handle"></div>
-            <div class="modal-title">更換頭像</div>
-            <div style="display:flex;flex-direction:column;gap:12px;">
-              <button class="btn btn-secondary btn-block" id="av-camera">📷 拍攝</button>
-              <button class="btn btn-secondary btn-block" id="av-gallery">🖼️ 從相簿選擇</button>
-              <button class="btn btn-ghost btn-block" id="av-cancel">取消</button>
-            </div>
-          </div>
-        `;
         document.body.appendChild(overlay);
         overlay.onclick = e => { if (e.target === overlay) Modal.hide('avatar-menu-overlay'); };
-        document.getElementById('av-cancel').onclick = () => Modal.hide('avatar-menu-overlay');
       }
-
-      document.getElementById('av-camera').onclick = () => {
+      const currentName = document.getElementById(`name-${avatarKey}`)?.textContent || '';
+      overlay.innerHTML = `
+        <div class="modal-sheet">
+          <div class="modal-handle"></div>
+          <div class="modal-title">個人設定</div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <button class="btn btn-secondary btn-block" id="av-camera">📷 拍攝更換頭像</button>
+            <button class="btn btn-secondary btn-block" id="av-gallery">🖼️ 從相簿選擇頭像</button>
+            <div style="border-top:1px solid var(--color-border);padding-top:12px;">
+              <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:8px;">修改暱稱</div>
+              <div style="display:flex;gap:8px;">
+                <input type="text" id="av-nickname" class="form-input" style="flex:1;"
+                       placeholder="輸入新暱稱" value="${currentName}" maxlength="10">
+                <button class="btn btn-primary" style="padding:8px 16px;white-space:nowrap;" id="av-save-name">儲存</button>
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-block" id="av-cancel">取消</button>
+          </div>
+        </div>
+      `;
+      overlay.querySelector('#av-cancel').onclick = () => Modal.hide('avatar-menu-overlay');
+      overlay.querySelector('#av-camera').onclick = () => {
         Modal.hide('avatar-menu-overlay');
         AvatarCropper.pick('camera', result => uploadAvatar(userId, avatarKey, result));
       };
-      document.getElementById('av-gallery').onclick = () => {
+      overlay.querySelector('#av-gallery').onclick = () => {
         Modal.hide('avatar-menu-overlay');
         AvatarCropper.pick('gallery', result => uploadAvatar(userId, avatarKey, result));
       };
-
+      overlay.querySelector('#av-save-name').onclick = () => {
+        const newName = overlay.querySelector('#av-nickname').value.trim();
+        if (!newName) { return; }
+        saveNickname(userId, avatarKey, newName);
+        Modal.hide('avatar-menu-overlay');
+      };
       Modal.show('avatar-menu-overlay');
+    }
+
+    function saveNickname(userId, avatarKey, name) {
+      localStorage.setItem(`nickname_${userId}`, name);
+      const nameEl = document.getElementById(`name-${avatarKey}`);
+      if (nameEl) nameEl.textContent = name;
+      Toast.success('暱稱已更新！');
     }
 
     async function uploadAvatar(userId, avatarKey, { base64, mimeType, dataUrl }) {

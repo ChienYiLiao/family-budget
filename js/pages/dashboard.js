@@ -28,11 +28,13 @@ const DashboardPage = (() => {
           <div class="dashboard-greeting">嗨，${user?.displayName || ''}！👋</div>
           <div class="dashboard-date">${now.getFullYear()} 年 ${month} 月</div>
         </div>
-        <button class="btn btn-icon" id="dash-scan-btn" title="掃描收據">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button class="btn btn-secondary" id="dash-scan-btn"
+                style="display:flex;align-items:center;gap:6px;padding:8px 14px;font-size:13px;font-weight:600;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/>
             <rect x="7" y="7" width="10" height="10" rx="1"/>
           </svg>
+          掃描收據
         </button>
       </div>
 

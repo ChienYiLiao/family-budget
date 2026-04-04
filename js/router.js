@@ -76,7 +76,7 @@ const Router = (() => {
     const backBtn = document.getElementById('topbar-back');
     const titleEl = document.getElementById('topbar-title');
     const titles = {
-      dashboard: '記帳本',
+      dashboard: '薯條幫記帳本',
       add:       '記帳',
       scan:      '掃描收據',
       recurring: '固定收支',

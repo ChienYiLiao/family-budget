@@ -24,18 +24,31 @@ const StatsPage = (() => {
     // 預設顯示當月
     const s = { year: thisYear, month: thisMonth };
 
+    const yearOpts = (sel) => [thisYear-1, thisYear].map(y=>`<option value="${y}" ${y===sel?'selected':''}>${y}</option>`).join('');
+    const monthOpts = (sel) => Array.from({length:12},(_,i)=>i+1).map(m=>`<option value="${m}" ${m===sel?'selected':''}>${m} 月</option>`).join('');
+
     const page = document.getElementById(PAGE_ID);
     page.innerHTML = `
       <!-- 篩選 -->
-      <div class="stats-filter" style="margin-bottom:8px;">
-        <div style="font-size:13px;font-weight:600;color:var(--color-text-muted);">從</div>
-        <select class="form-input" id="stats-start-year" style="flex:1;padding:8px 12px;" onchange="StatsPage._load()">
-          ${[thisYear-1, thisYear].map(y=>`<option value="${y}" ${y===s.year?'selected':''}>${y}</option>`).join('')}
-        </select>
-        <select class="form-input" id="stats-start-month" style="flex:1;padding:8px 12px;" onchange="StatsPage._load()">
-          ${Array.from({length:12},(_,i)=>i+1).map(m=>`<option value="${m}" ${m===s.month?'selected':''}>${m} 月</option>`).join('')}
-        </select>
-        <div style="font-size:13px;font-weight:600;color:var(--color-text-muted);">至 ${thisYear}/${thisMonth}</div>
+      <div style="background:var(--color-bg-card);border-radius:12px;padding:12px;margin-bottom:8px;">
+        <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:8px;align-items:center;margin-bottom:8px;">
+          <div style="font-size:12px;font-weight:600;color:var(--color-text-muted);width:24px;text-align:center;">從</div>
+          <select class="form-input" id="stats-start-year" style="padding:8px 10px;font-size:13px;" onchange="StatsPage._load()">
+            ${yearOpts(s.year)}
+          </select>
+          <select class="form-input" id="stats-start-month" style="padding:8px 10px;font-size:13px;" onchange="StatsPage._load()">
+            ${monthOpts(s.month)}
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:8px;align-items:center;">
+          <div style="font-size:12px;font-weight:600;color:var(--color-text-muted);width:24px;text-align:center;">至</div>
+          <select class="form-input" id="stats-end-year" style="padding:8px 10px;font-size:13px;" onchange="StatsPage._load()">
+            ${yearOpts(thisYear)}
+          </select>
+          <select class="form-input" id="stats-end-month" style="padding:8px 10px;font-size:13px;" onchange="StatsPage._load()">
+            ${monthOpts(thisMonth)}
+          </select>
+        </div>
       </div>
       <!-- 篩選選項 -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:16px;padding:10px 12px;background:var(--color-bg-card);border-radius:10px;">
@@ -104,8 +117,8 @@ const StatsPage = (() => {
   async function _load() {
     const startYear  = parseInt(document.getElementById('stats-start-year').value);
     const startMonth = parseInt(document.getElementById('stats-start-month').value);
-    const now = new Date();
-    const endYear = now.getFullYear(), endMonth = now.getMonth() + 1;
+    const endYear    = parseInt(document.getElementById('stats-end-year').value);
+    const endMonth   = parseInt(document.getElementById('stats-end-month').value);
     const excludeRecurring = document.getElementById('stats-exclude-recurring')?.checked ? 'true' : 'false';
     const excludeBigFixed  = document.getElementById('stats-exclude-big-fixed')?.checked;
     const excludeCategories = excludeBigFixed ? '房貸,房租' : '';
