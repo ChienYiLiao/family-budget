@@ -238,6 +238,7 @@
   grid-template-columns: 1fr 1fr;
   gap: var(--space-sm);
   margin-bottom: var(--space-md);
+  padding: 0 var(--space-md);
 }
 .stat-card {
   background: var(--color-bg-card);
