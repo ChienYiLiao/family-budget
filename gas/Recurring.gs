@@ -125,3 +125,38 @@ function handleApplyRecurring(body) {
 
   return { applied, skipped, details: results };
 }
+
+/**
+ * 月底自動套用固定收支（time-driven trigger 呼叫）
+ * 在每月最後一天 23:00 執行，確保當月所有未手動確認的固定收支都被記錄
+ */
+function autoApplyRecurring() {
+  const today = new Date();
+  const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+  // 只在月底最後一天執行
+  if (tomorrow.getDate() !== 1) return;
+
+  const year  = today.getFullYear();
+  const month = today.getMonth() + 1;
+  const result = handleApplyRecurring({ year, month });
+  Logger.log('月底自動套用固定收支完成：' +
+    Utilities.formatDate(today, Session.getScriptTimeZone(), 'yyyy-MM-dd') +
+    ' applied=' + result.applied + ' skipped=' + result.skipped);
+}
+
+/**
+ * 設定月底自動套用 Trigger（在 GAS 編輯器手動執行一次即可）
+ */
+function setupAutoApplyTrigger() {
+  // 清除舊的同名 trigger
+  ScriptApp.getProjectTriggers().forEach(t => {
+    if (t.getHandlerFunction() === 'autoApplyRecurring') ScriptApp.deleteTrigger(t);
+  });
+  // 每天 23:00 執行，函式內部判斷是否為月底
+  ScriptApp.newTrigger('autoApplyRecurring')
+    .timeBased()
+    .atHour(23)
+    .everyDays(1)
+    .create();
+  Logger.log('✓ 固定收支月底自動套用 Trigger 設定完成（每天 23:00 執行，月底才入帳）');
+}
