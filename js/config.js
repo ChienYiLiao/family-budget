@@ -32,6 +32,7 @@ const CONFIG = {
     { name: '藥物',   emoji: '💊' },
     { name: '日用品', emoji: '🛒' },
     { name: '加油',   emoji: '⛽' },
+    { name: '停車費', emoji: '🅿️' },
     { name: '叫車',   emoji: '🚗' },
     { name: '大眾運輸', emoji: '🚇' },
     { name: '衣物',   emoji: '👕' },

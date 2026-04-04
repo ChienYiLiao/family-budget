@@ -104,10 +104,10 @@ function importHistoricalData() {
     r('2026-01-02',G,'expense', 1000,'投資', CASH,'2026/01滾給胖的證券錢'),
     r('2026-01-02',S,'expense', 1148,'加油', CC,  '加油'),
     r('2026-01-02',S,'expense',  285,'飲料', CC,  '星巴克巧克力'),
-    r('2026-01-03',P,'expense',   90,'其他', CC,  '秀泰停車'),
+    r('2026-01-03',P,'expense',   90,'停車費', CC,  '秀泰停車'),
     r('2026-01-03',P,'expense', 1018,'三餐', CC,  '秀泰吃雞湯火鍋'),
     r('2026-01-03',P,'expense',   55,'點心', CC,  '麥當勞玉米濃湯妹妹想喝'),
-    r('2026-01-03',P,'expense',  200,'其他', CC,  '打網咖停車'),
+    r('2026-01-03',P,'expense',  200,'停車費', CC,  '打網咖停車'),
     r('2026-01-03',P,'expense',  310,'三餐', CC,  '打網咖+吃晚餐'),
     r('2026-01-04',P,'expense',  500,'三餐', CASH,'豬豬W02公司吃午餐'),
     r('2026-01-04',S,'expense',  640,'加油', CC,  '加油'),
@@ -149,7 +149,7 @@ function importHistoricalData() {
     r('2026-01-19',S,'expense',   95,'加油', CC,  '小朋友加油'),
     r('2026-01-19',S,'expense', 1137,'加油', CC,  '花生米加油'),
     r('2026-01-19',G,'expense',   85,'三餐', CASH,'滾滾ㄉ午餐-炒麵+米漿'),
-    r('2026-01-19',G,'expense',   20,'其他', CASH,'南港展覽館場勘停車'),
+    r('2026-01-19',G,'expense',   20,'停車費', CASH,'南港展覽館場勘停車'),
     r('2026-01-19',G,'expense',  499,'日用品',CASH,'雨傘'),
     r('2026-01-20',G,'expense',   75,'三餐', CC,  '滾滾ㄉ午餐-拌拌乾拉麵'),
     r('2026-01-22',P,'expense',  200,'三餐', CASH,'豬豬在公司的午餐+昨天忘記寄了'),
@@ -195,13 +195,13 @@ function importHistoricalData() {
     r('2026-02-05',S,'expense',  837,'三餐', CC,  '春水堂'),
     r('2026-02-07',S,'expense', 1000,'三餐', CASH,'跟明旗吃晚餐'),
     r('2026-02-07',S,'expense',  283,'三餐', CC,  '早安有喜'),
-    r('2026-02-08',S,'expense',   71,'其他', CC,  '南港醫院停車'),
+    r('2026-02-08',S,'expense',   71,'停車費', CC,  '南港醫院停車'),
     r('2026-02-09',P,'expense', 9761,'藥物', CC,  '猛健樂2.5mg'),
     r('2026-02-10',G,'expense',  280,'飲料', CC,  '熱可可兩杯'),
     r('2026-02-10',S,'expense',  566,'日用品',CC,  '日本出遊豬豬手冊'),
     r('2026-02-11',G,'expense',  450,'看診', CASH,'滾滾上病看診250+多拿藥200'),
     r('2026-02-11',G,'expense',  139,'三餐', CC,  '玉米濃湯+喉糖'),
-    r('2026-02-11',P,'expense',   60,'其他', CASH,'香山看顯微鏡停車'),
+    r('2026-02-11',P,'expense',   60,'停車費', CASH,'香山看顯微鏡停車'),
     r('2026-02-12',G,'expense',  110,'三餐', CC,  '滾滾ㄉ午餐-滷味'),
     r('2026-02-13',P,'expense', 1007,'加油', CC,  '禮拜一加油'),
     r('2026-02-13',P,'expense',  755,'加油', CC,  '花生米加油'),
@@ -213,7 +213,7 @@ function importHistoricalData() {
     r('2026-02-14',S,'expense',   90,'禮物', CASH,'姊姊水果店-果凍'),
     r('2026-02-14',S,'expense',  100,'拜拜', CASH,'伸港媽祖廟拜拜'),
     r('2026-02-15',P,'expense', 2422,'禮物', CC,  '小米-監視器跟毛球'),
-    r('2026-02-15',P,'expense',   20,'其他', CC,  'NOVA停車'),
+    r('2026-02-15',P,'expense',   20,'停車費', CC,  'NOVA停車'),
     r('2026-02-15',P,'expense',  576,'禮物', CC,  'NOVA-記憶卡'),
     r('2026-02-16',P,'expense',   62,'飲料', CC,  '氣泡水'),
     r('2026-02-17',P,'expense',  170,'禮物', CC,  '全家-買妹妹的食物'),
@@ -223,12 +223,12 @@ function importHistoricalData() {
     r('2026-02-18',S,'expense', 1490,'禮物', CC,  '爸爸車子的導航買斷'),
     r('2026-02-18',S,'expense',  300,'飲料', CC,  '大家的飲料-茶海'),
     r('2026-02-19',P,'expense',  261,'飲料', CC,  '全家旁邊的迷克夏'),
-    r('2026-02-19',P,'expense',   80,'其他', CC,  '鹿港停車'),
+    r('2026-02-19',P,'expense',   80,'停車費', CC,  '鹿港停車'),
     r('2026-02-19',G,'expense',  761,'三餐', CC,  '家裡吃麥當勞'),
     r('2026-02-20',P,'expense', 1932,'三餐', CC,  '嘉義在飯店吃火鍋'),
     r('2026-02-20',P,'expense', 1694,'三餐', CC,  '台南湯咖喱'),
     r('2026-02-21',P,'expense',  110,'飲料', CC,  '可不可'),
-    r('2026-02-21',P,'expense',  150,'其他', CC,  '虎尾停車'),
+    r('2026-02-21',P,'expense',  150,'停車費', CC,  '虎尾停車'),
     r('2026-02-21',P,'expense', 1224,'加油', CC,  '花生米加油'),
     r('2026-02-23',P,'expense',   90,'飲料', CC,  '可不可'),
     r('2026-02-23',G,'expense',   75,'三餐', CC,  '滾滾ㄉ午餐-拌拌乾拉麵'),
@@ -243,7 +243,7 @@ function importHistoricalData() {
     r('2026-02-26',G,'expense',  130,'三餐', CC,  '滾滾ㄉ午餐-滷味'),
     r('2026-02-27',S,'expense', 1000,'加油', CASH,'小朋友保養'),
     r('2026-02-27',S,'expense',  300,'飲料', CC,  '可不可'),
-    r('2026-02-27',S,'expense',   60,'其他', CC,  '二哥家旁邊停車費'),
+    r('2026-02-27',S,'expense',   60,'停車費', CC,  '二哥家旁邊停車費'),
     r('2026-02-28',P,'expense',  105,'飲料', CC,  '遠雄咖啡-冰美式'),
     r('2026-02-28',S,'expense',   67,'飲料', CC,  '龜記-柳橙翡翠'),
     r('2026-02-28',S,'expense',  480,'三餐', CC,  '遠雄拉麵'),
@@ -261,7 +261,7 @@ function importHistoricalData() {
     r('2026-03-06',P,'expense', 9761,'藥物', CC,  '猛健樂7.5mg'),
     r('2026-03-06',S,'expense',  205,'叫車', CC,  'Uber'),
     r('2026-03-07',P,'expense',  200,'看診', CASH,'洗牙掛號'),
-    r('2026-03-07',P,'expense',   40,'其他', CC,  '看牙齒停車'),
+    r('2026-03-07',P,'expense',   40,'停車費', CC,  '看牙齒停車'),
     r('2026-03-08',P,'income',  1000,'投資', CASH,'2026/03滾給胖的證券錢'),
     r('2026-03-08',G,'expense', 1000,'投資', CASH,'2026/03滾給胖的證券錢'),
     r('2026-03-08',P,'expense',  869,'三餐', CC,  '跟媽媽吃莫凡彼'),
@@ -279,7 +279,7 @@ function importHistoricalData() {
     r('2026-03-14',S,'expense',  495,'禮物', CC,  '書敏的小新系列拼圖磁鐵'),
     r('2026-03-14',S,'expense',  335,'日用品',CC,  '薄荷糖、維生素D、衛生棉'),
     r('2026-03-14',S,'expense',   15,'點心', CASH,'給豬豬的巧克力'),
-    r('2026-03-14',S,'expense',  200,'其他', CC,  'Lalaport停車'),
+    r('2026-03-14',S,'expense',  200,'停車費', CC,  'Lalaport停車'),
     r('2026-03-15',S,'expense',  360,'三餐', CC,  '丸龜'),
     r('2026-03-15',S,'expense',   80,'三餐', CASH,'蝦子鍋貼'),
     r('2026-03-15',S,'expense',   70,'三餐', CASH,'滷味（米血+豬頭皮）'),
@@ -291,7 +291,7 @@ function importHistoricalData() {
     r('2026-03-17',S,'expense',  540,'三餐', CC,  '藏壽司'),
     r('2026-03-17',P,'expense',  115,'飲料', CC,  'Starbucks'),
     r('2026-03-18',G,'expense',   13,'三餐', CASH,'御飯糰和純粹喝（扣50禮券）'),
-    r('2026-03-18',S,'expense',   80,'其他', CC,  '宏匯廣場停車費兩天份'),
+    r('2026-03-18',S,'expense',   80,'停車費', CC,  '宏匯廣場停車費兩天份'),
     r('2026-03-18',P,'expense',  190,'三餐', CASH,'午餐炒飯+可不可'),
     r('2026-03-18',S,'expense',  144,'三餐', CC,  '丸龜'),
     r('2026-03-18',S,'expense',  310,'飲料', CC,  '星巴克'),
@@ -333,7 +333,7 @@ function importHistoricalData() {
     r('2026-04-02',P,'expense',   80,'三餐', CASH,'酸辣湯餃'),
     r('2026-04-02',P,'expense', 2640,'大眾運輸',CC,'4/9高鐵出差板橋-台南來回高鐵票'),
     r('2026-04-02',S,'expense',  278,'三餐', CC,  'Potato corner'),
-    r('2026-04-02',S,'expense',   50,'其他', CC,  '裕隆城停車'),
+    r('2026-04-02',S,'expense',   50,'停車費', CC,  '裕隆城停車'),
     r('2026-04-03',S,'expense',  682,'三餐', CC,  '牛排'),
     r('2026-04-03',P,'expense',  110,'飲料', CC,  'cafein莊園黑咖啡'),
     r('2026-04-03',S,'expense',  261,'日用品',CC,  '康是美'),
@@ -376,12 +376,20 @@ function fixImportedCategories() {
     '房租':      '房租'
   };
 
+  // note 包含「停車」關鍵字的項目也修正為停車費
+  const parkingKeyword = '停車';
+
   let updated = 0;
   for (let i = 1; i < data.length; i++) {
     if (data[i][srcIdx] !== 'import') continue;
-    const note   = data[i][noteIdx];
-    const newCat = noteToCategory[note];
-    if (newCat && data[i][catIdx] !== newCat) {
+    const note    = data[i][noteIdx];
+    const currCat = data[i][catIdx];
+    let newCat = noteToCategory[note];
+    // 備註包含「停車」且目前類別為「其他」→ 改為停車費
+    if (!newCat && String(note).includes(parkingKeyword) && currCat === '其他') {
+      newCat = '停車費';
+    }
+    if (newCat && currCat !== newCat) {
       sheet.getRange(i + 1, catIdx + 1).setValue(newCat);
       updated++;
     }
