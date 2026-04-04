@@ -89,12 +89,17 @@ const RecurringPage = (() => {
     const isActive = String(r.is_active).toUpperCase() === 'TRUE';
     const emoji    = CONFIG.getCategoryEmoji(r.category);
     const payLabel = CONFIG.getPaymentLabel(r.payment_method);
+    const adjustBtn = (r.type === 'income' && isActive) ? `
+      <button style="background:none;border:none;color:var(--color-primary);font-size:11px;padding:2px 0;cursor:pointer;text-decoration:underline;text-align:left;"
+              onclick="RecurringPage._adjustThisMonth('${r.recurring_id}')">本月調整</button>
+    ` : '';
     return `
       <div class="recurring-item ${isActive ? '' : 'inactive'}" id="rec-item-${r.recurring_id}">
         <div style="font-size:24px;flex-shrink:0;">${emoji}</div>
         <div class="recurring-info">
           <div class="recurring-name">${r.name || r.category}</div>
           <div class="recurring-meta">每月 ${r.day_of_month} 日・${payLabel}</div>
+          ${adjustBtn}
         </div>
         <div class="recurring-amount ${r.type}">
           ${r.type === 'income' ? '+' : '-'}${Utils.formatAmount(r.amount)}
@@ -108,6 +113,93 @@ const RecurringPage = (() => {
                 onclick="RecurringPage._delete('${r.recurring_id}')" title="刪除">✕</button>
       </div>
     `;
+  }
+
+  function _adjustThisMonth(recurringId) {
+    const item = _data.find(r => r.recurring_id === recurringId);
+    if (!item) return;
+
+    const now = new Date();
+    const thisYear  = now.getFullYear();
+    const thisMonth = now.getMonth() + 1;
+    const ym = `${thisYear}-${String(thisMonth).padStart(2,'0')}`;
+
+    const id = 'recurring-adjust-modal';
+    let overlay = document.getElementById(id);
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = id;
+      overlay.className = 'modal-overlay';
+      overlay.onclick = e => { if (e.target === overlay) Modal.hide(id); };
+      document.body.appendChild(overlay);
+    }
+    overlay.innerHTML = `
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title">本月實際調整</div>
+        <div style="font-size:13px;color:var(--color-text-muted);margin-bottom:16px;line-height:1.6;">
+          調整 <strong>${ym}</strong> 的「${item.name || item.category}」實際收入金額。<br>
+          若本月已套用固定收支，將更新該筆紀錄；否則新增一筆本月實際記錄。
+        </div>
+        <div class="form-group">
+          <div class="form-label">實際金額</div>
+          <input type="number" class="form-input" id="adj-amount"
+                 value="${item.amount}" inputmode="decimal" min="0">
+        </div>
+        <div style="display:flex;gap:12px;margin-top:8px;padding-bottom:8px;">
+          <button class="btn btn-secondary btn-block" onclick="Modal.hide('${id}')">取消</button>
+          <button class="btn btn-primary btn-block" onclick="RecurringPage._submitAdjust('${recurringId}', '${ym}')">確認</button>
+        </div>
+      </div>
+    `;
+    Modal.show(id);
+  }
+
+  async function _submitAdjust(recurringId, ym) {
+    const item = _data.find(r => r.recurring_id === recurringId);
+    if (!item) return;
+
+    const actualAmount = parseFloat(document.getElementById('adj-amount').value);
+    if (!actualAmount || actualAmount <= 0) { Toast.error('請輸入有效金額'); return; }
+
+    const [yearStr, monthStr] = ym.split('-');
+    const year = parseInt(yearStr), month = parseInt(monthStr);
+
+    Modal.hide('recurring-adjust-modal');
+    Loader.show('調整中...');
+    try {
+      // 找本月是否已有對應的固定收支交易
+      const result = await API.getTransactions({ year, month });
+      const recurringTxn = (result.transactions || []).find(t =>
+        t.receipt_source === 'recurring' && t.category === item.category
+      );
+
+      if (recurringTxn) {
+        await API.updateTransaction(recurringTxn.transaction_id, {
+          amount: actualAmount,
+          note: `${item.name || item.category} 本月實際`
+        });
+        Toast.success(`已更新為 ${Utils.formatAmount(actualAmount)}`);
+      } else {
+        // 本月尚未套用固定收支，直接新增一筆實際記錄
+        const user = State.getState().currentUser;
+        await API.addTransaction({
+          user_id:        item.user_id || user?.userId || '',
+          type:           item.type,
+          amount:         actualAmount,
+          category:       item.category,
+          payment_method: item.payment_method,
+          note:           `${item.name || item.category} 本月實際`,
+          receipt_source: 'adjustment',
+          date:           `${ym}-01`
+        });
+        Toast.success(`已新增本月實際記錄 ${Utils.formatAmount(actualAmount)}`);
+      }
+    } catch(err) {
+      Toast.error('調整失敗：' + err.message);
+    } finally {
+      Loader.hide();
+    }
   }
 
   function _openAddModal() {
@@ -240,5 +332,5 @@ const RecurringPage = (() => {
     }
   }
 
-  return { show, hide, _openAddModal, _setFormType, _submitForm, _toggle, _delete };
+  return { show, hide, _openAddModal, _setFormType, _submitForm, _toggle, _delete, _adjustThisMonth, _submitAdjust };
 })();

@@ -21,10 +21,8 @@ const StatsPage = (() => {
     const now = new Date();
     const thisYear  = now.getFullYear();
     const thisMonth = now.getMonth() + 1;
-    // 預設顯示近 6 個月
-    const startDate = Utils.prevMonth(thisYear, thisMonth);
-    let s = startDate;
-    for (let i = 0; i < 5; i++) s = Utils.prevMonth(s.year, s.month);
+    // 預設顯示當月
+    const s = { year: thisYear, month: thisMonth };
 
     const page = document.getElementById(PAGE_ID);
     page.innerHTML = `
@@ -39,13 +37,19 @@ const StatsPage = (() => {
         </select>
         <div style="font-size:13px;font-weight:600;color:var(--color-text-muted);">至 ${thisYear}/${thisMonth}</div>
       </div>
-      <!-- 固定收支 toggle -->
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 12px;background:var(--color-bg-card);border-radius:10px;">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;font-size:13px;color:var(--color-text-muted);">
-          <input type="checkbox" id="stats-exclude-recurring" onchange="StatsPage._load()" style="width:16px;height:16px;accent-color:var(--color-primary);">
-          排除固定收支項目
-        </label>
-        <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="StatsPage._generateReport()">產生月報表</button>
+      <!-- 篩選選項 -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:16px;padding:10px 12px;background:var(--color-bg-card);border-radius:10px;">
+        <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--color-text-muted);">
+            <input type="checkbox" id="stats-exclude-recurring" onchange="StatsPage._load()" style="width:16px;height:16px;accent-color:var(--color-primary);">
+            排除固定收支項目（收支趨勢用）
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--color-text-muted);">
+            <input type="checkbox" id="stats-exclude-big-fixed" checked onchange="StatsPage._load()" style="width:16px;height:16px;accent-color:var(--color-primary);">
+            排除房貸/房租（類別分析用）
+          </label>
+        </div>
+        <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;flex-shrink:0;" onclick="StatsPage._generateReport()">產生月報表</button>
       </div>
 
       <!-- 使用者收支對比 -->
@@ -103,10 +107,12 @@ const StatsPage = (() => {
     const now = new Date();
     const endYear = now.getFullYear(), endMonth = now.getMonth() + 1;
     const excludeRecurring = document.getElementById('stats-exclude-recurring')?.checked ? 'true' : 'false';
+    const excludeBigFixed  = document.getElementById('stats-exclude-big-fixed')?.checked;
+    const excludeCategories = excludeBigFixed ? '房貸,房租' : '';
 
     Loader.show('統計中...');
     try {
-      const data = await API.getStats({ startYear, startMonth, endYear, endMonth, excludeRecurring });
+      const data = await API.getStats({ startYear, startMonth, endYear, endMonth, excludeRecurring, excludeCategories });
       _renderUserBreakdown(data.userBreakdown);
       _renderTrendChart(data.monthlyTrend);
       _renderPayChart(data.paymentMethodBreakdown);

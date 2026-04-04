@@ -34,13 +34,22 @@ function handleGetStats(params) {
   });
 
   // 類別累計（支出）
-  const categoryMap = {};
   const filteredTxns = txns.filter(r => {
     if (!r.date) return false;
     const ym = r.date.substring(0, 7);
     return months.includes(ym) && r.type === 'expense';
   });
-  filteredTxns.forEach(r => {
+
+  // 排除特定類別（用於類別分析/支付方式/TOP10，不影響月趨勢與收支對比）
+  const excludeCats = params.excludeCategories
+    ? String(params.excludeCategories).split(',').map(s => s.trim()).filter(Boolean)
+    : [];
+  const analysisTxns = excludeCats.length > 0
+    ? filteredTxns.filter(r => !excludeCats.includes(r.category))
+    : filteredTxns;
+
+  const categoryMap = {};
+  analysisTxns.forEach(r => {
     const cat = r.category || '其他';
     if (!categoryMap[cat]) categoryMap[cat] = { total: 0, count: 0 };
     categoryMap[cat].total += Number(r.amount) || 0;
@@ -51,9 +60,9 @@ function handleGetStats(params) {
     .sort((a, b) => b.total - a.total);
 
   // 支付方式佔比（支出）
-  const totalExpenseAll = filteredTxns.reduce((s, r) => s + (Number(r.amount)||0), 0);
+  const totalExpenseAll = analysisTxns.reduce((s, r) => s + (Number(r.amount)||0), 0);
   const payMap = {};
-  filteredTxns.forEach(r => {
+  analysisTxns.forEach(r => {
     const pm = r.payment_method || 'cash';
     payMap[pm] = (payMap[pm] || 0) + (Number(r.amount) || 0);
   });
@@ -77,7 +86,8 @@ function handleGetStats(params) {
 
   // 本期最大支出 Top 10 單項
   const topTransactions = txns
-    .filter(r => r.date && months.includes(r.date.substring(0,7)) && r.type === 'expense')
+    .filter(r => r.date && months.includes(r.date.substring(0,7)) && r.type === 'expense'
+              && (excludeCats.length === 0 || !excludeCats.includes(r.category)))
     .sort((a, b) => (Number(b.amount)||0) - (Number(a.amount)||0))
     .slice(0, 10)
     .map(r => ({
