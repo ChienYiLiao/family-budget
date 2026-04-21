@@ -73,6 +73,7 @@ const CONFIG = {
   RECURRING_EXPENSE_CATEGORIES: [
     { name: '房貸',       emoji: '🏠' },
     { name: '房租',       emoji: '🔑' },
+    { name: '房屋保險',   emoji: '🛡️' },
     { name: '電話費',     emoji: '📱' },
     { name: '定期定額股票', emoji: '📊' },
     { name: '現金儲蓄',   emoji: '🐷' }
