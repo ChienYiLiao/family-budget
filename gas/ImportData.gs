@@ -400,3 +400,52 @@ function fixImportedCategories() {
   ss.toast(msg, '類別修正', 5);
   return updated;
 }
+
+/**
+ * 清除重複的自動套用記帳（一次性執行）
+ *
+ * 邏輯：掃描指定年月（預設 2026-04）所有交易，
+ *       找出同 user_id + category 同時有 receipt_source='recurring'（自動套用）
+ *       與其他記錄（手動記帳）的組合，刪除 receipt_source='recurring' 那筆。
+ *
+ * 執行前請先在 GAS 執行紀錄確認 Log 輸出，確認要刪除的是正確的項目。
+ */
+function fixDuplicateRecurring(targetYm) {
+  const ym = targetYm || '2026-04';
+  const ss = SpreadsheetApp.openById(getProp('SPREADSHEET_ID'));
+  const sheet = ss.getSheetByName('TRANSACTIONS');
+  if (!sheet) { Logger.log('找不到 TRANSACTIONS sheet'); return; }
+
+  const allTxns = readAllRows('TRANSACTIONS');
+  const monthTxns = allTxns.filter(t => String(t.date || '').startsWith(ym));
+
+  // 依 user_id + category 分組
+  const groups = {};
+  monthTxns.forEach(t => {
+    const key = `${t.user_id}||${t.category}`;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(t);
+  });
+
+  const toDelete = [];
+  Object.entries(groups).forEach(([key, txns]) => {
+    if (txns.length < 2) return;
+    const recurringOnes = txns.filter(t => t.receipt_source === 'recurring');
+    const otherOnes     = txns.filter(t => t.receipt_source !== 'recurring');
+    if (recurringOnes.length > 0 && otherOnes.length > 0) {
+      recurringOnes.forEach(t => toDelete.push(t));
+    }
+  });
+
+  Logger.log(`[fixDuplicateRecurring] 發現 ${toDelete.length} 筆重複的自動套用記帳：`);
+  toDelete.forEach(t => Logger.log(`  刪除 → ${t.date} | ${t.category} | ${t.note} | $${t.amount} | id:${t.transaction_id}`));
+
+  if (toDelete.length === 0) {
+    Logger.log('沒有需要清除的重複項目');
+    return;
+  }
+
+  toDelete.forEach(t => deleteRow('TRANSACTIONS', 'transaction_id', t.transaction_id));
+  Logger.log(`✓ 清除完成，共刪除 ${toDelete.length} 筆`);
+  SpreadsheetApp.getActiveSpreadsheet().toast(`已清除 ${toDelete.length} 筆重複記帳`, '完成', 5);
+}

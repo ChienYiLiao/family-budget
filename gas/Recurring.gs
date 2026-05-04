@@ -74,6 +74,8 @@ function handleApplyRecurring(body) {
   const todayDay = parseInt(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'd'));
 
   const items = readAllRows('RECURRING');
+  // 一次性讀取本月所有交易，用於下方檢查是否已有手動記帳
+  const allTxns = readAllRows('TRANSACTIONS');
   const results = [];
   let applied = 0, skipped = 0;
 
@@ -86,6 +88,22 @@ function handleApplyRecurring(body) {
     // 防重複：已套用過這個月
     if (item.last_applied_month === ym) {
       results.push({ recurring_id: item.recurring_id, status: 'skipped_duplicate' });
+      skipped++;
+      return;
+    }
+    // 防重複：本月同 user_id + category 已有任何記帳（含手動記帳、本月調整）
+    const hasExisting = allTxns.some(t =>
+      t.user_id === item.user_id &&
+      t.category === item.category &&
+      String(t.date || '').slice(0, 7) === ym
+    );
+    if (hasExisting) {
+      // 標記為已套用，避免下次仍判斷為待套用
+      updateRow('RECURRING', 'recurring_id', item.recurring_id, {
+        last_applied_month: ym,
+        updated_at: nowIso()
+      });
+      results.push({ recurring_id: item.recurring_id, status: 'skipped_existing' });
       skipped++;
       return;
     }

@@ -133,6 +133,7 @@ const DashboardPage = (() => {
   }
 
   async function _loadData() {
+    _autoApplyOnce();
     try {
       const now = new Date();
       const data = await API.getDashboard(now.getFullYear(), now.getMonth() + 1);
@@ -144,6 +145,16 @@ const DashboardPage = (() => {
       Toast.error('Dashboard 載入失敗');
       document.getElementById('dash-month-expense').textContent = '錯誤';
     }
+  }
+
+  // 每天首次開啟 Dashboard 時靜默套用固定收支（有重複保護，不影響已手動記帳的項目）
+  function _autoApplyOnce() {
+    const today = new Date().toISOString().slice(0, 10);
+    if (localStorage.getItem('lastApplyDate') === today) return;
+    const now = new Date();
+    API.applyRecurring(now.getFullYear(), now.getMonth() + 1)
+      .then(() => localStorage.setItem('lastApplyDate', today))
+      .catch(() => {});
   }
 
   function _updateSummary(data) {
