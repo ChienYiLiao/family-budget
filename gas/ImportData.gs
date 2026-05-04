@@ -402,22 +402,38 @@ function fixImportedCategories() {
 }
 
 /**
- * 清除重複的自動套用記帳（一次性執行）
+ * 診斷：列出四月份所有交易及其 receipt_source（執行後看 Log）
+ */
+function diagApril() {
+  const ym = '2026-04';
+  const allTxns = readAllRows('TRANSACTIONS');
+  const monthTxns = allTxns.filter(t => String(t.date || '').startsWith(ym));
+  Logger.log(`四月份共 ${monthTxns.length} 筆交易：`);
+  monthTxns.forEach(t => {
+    Logger.log(`  ${t.date} | ${t.user_id} | ${t.category} | ${t.note} | $${t.amount} | src:${t.receipt_source}`);
+  });
+}
+
+/**
+ * 清除重複的固定收支記帳（一次性執行）
  *
- * 邏輯：掃描指定年月（預設 2026-04）所有交易，
- *       找出同 user_id + category 同時有 receipt_source='recurring'（自動套用）
- *       與其他記錄（手動記帳）的組合，刪除 receipt_source='recurring' 那筆。
+ * 識別邏輯：note 以「固定收入：」或「固定支出：」開頭 → 視為自動套用的項目。
+ *           若同月同 user_id + category 同時存在「自動套用」與「其他記錄」→ 刪除自動套用那筆，保留手動記帳。
  *
- * 執行前請先在 GAS 執行紀錄確認 Log 輸出，確認要刪除的是正確的項目。
+ * 執行前先看 Log 確認要刪除的項目是否正確。
  */
 function fixDuplicateRecurring(targetYm) {
   const ym = targetYm || '2026-04';
-  const ss = SpreadsheetApp.openById(getProp('SPREADSHEET_ID'));
-  const sheet = ss.getSheetByName('TRANSACTIONS');
-  if (!sheet) { Logger.log('找不到 TRANSACTIONS sheet'); return; }
-
   const allTxns = readAllRows('TRANSACTIONS');
   const monthTxns = allTxns.filter(t => String(t.date || '').startsWith(ym));
+
+  Logger.log(`[fixDuplicateRecurring] 掃描 ${ym}，共 ${monthTxns.length} 筆`);
+
+  // 判斷是否為「自動套用」（note 以固定收入：/ 固定支出：開頭）
+  const isAutoApplied = t => {
+    const note = String(t.note || '');
+    return note.startsWith('固定收入：') || note.startsWith('固定支出：');
+  };
 
   // 依 user_id + category 分組
   const groups = {};
@@ -430,15 +446,15 @@ function fixDuplicateRecurring(targetYm) {
   const toDelete = [];
   Object.entries(groups).forEach(([key, txns]) => {
     if (txns.length < 2) return;
-    const recurringOnes = txns.filter(t => t.receipt_source === 'recurring');
-    const otherOnes     = txns.filter(t => t.receipt_source !== 'recurring');
-    if (recurringOnes.length > 0 && otherOnes.length > 0) {
-      recurringOnes.forEach(t => toDelete.push(t));
+    const autoOnes  = txns.filter(t => isAutoApplied(t));
+    const otherOnes = txns.filter(t => !isAutoApplied(t));
+    if (autoOnes.length > 0 && otherOnes.length > 0) {
+      autoOnes.forEach(t => toDelete.push(t));
     }
   });
 
-  Logger.log(`[fixDuplicateRecurring] 發現 ${toDelete.length} 筆重複的自動套用記帳：`);
-  toDelete.forEach(t => Logger.log(`  刪除 → ${t.date} | ${t.category} | ${t.note} | $${t.amount} | id:${t.transaction_id}`));
+  Logger.log(`發現 ${toDelete.length} 筆重複的自動套用記帳：`);
+  toDelete.forEach(t => Logger.log(`  刪除 → ${t.date} | ${t.category} | ${t.note} | $${t.amount} | src:${t.receipt_source}`));
 
   if (toDelete.length === 0) {
     Logger.log('沒有需要清除的重複項目');
