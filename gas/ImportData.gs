@@ -417,10 +417,12 @@ function diagApril() {
 /**
  * 清除重複的固定收支記帳（一次性執行）
  *
- * 識別邏輯：note 以「固定收入：」或「固定支出：」開頭 → 視為自動套用的項目。
- *           若同月同 user_id + category 同時存在「自動套用」與「其他記錄」→ 刪除自動套用那筆，保留手動記帳。
+ * 識別邏輯：
+ *   - note 以「固定收入：」或「固定支出：」開頭 = 月底 Trigger 自動套用的項目
+ *   - 若同月同 category（不限 user_id）還有其他非自動套用的記帳 → 刪除自動套用那筆
+ *   - 若某 category 只有自動套用、沒有對應的手動記帳 → 保留（例如：房屋保險）
  *
- * 執行前先看 Log 確認要刪除的項目是否正確。
+ * 執行前請先執行 diagApril() 確認 Log，再執行此函式。
  */
 function fixDuplicateRecurring(targetYm) {
   const ym = targetYm || '2026-04';
@@ -429,32 +431,27 @@ function fixDuplicateRecurring(targetYm) {
 
   Logger.log(`[fixDuplicateRecurring] 掃描 ${ym}，共 ${monthTxns.length} 筆`);
 
-  // 判斷是否為「自動套用」（note 以固定收入：/ 固定支出：開頭）
+  // 判斷是否為月底 Trigger 自動套用（note 以「固定收入：」或「固定支出：」開頭）
   const isAutoApplied = t => {
     const note = String(t.note || '');
     return note.startsWith('固定收入：') || note.startsWith('固定支出：');
   };
 
-  // 依 user_id + category 分組
-  const groups = {};
-  monthTxns.forEach(t => {
-    const key = `${t.user_id}||${t.category}`;
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(t);
-  });
+  const autoOnes  = monthTxns.filter(t => isAutoApplied(t));
+  const otherOnes = monthTxns.filter(t => !isAutoApplied(t));
 
-  const toDelete = [];
-  Object.entries(groups).forEach(([key, txns]) => {
-    if (txns.length < 2) return;
-    const autoOnes  = txns.filter(t => isAutoApplied(t));
-    const otherOnes = txns.filter(t => !isAutoApplied(t));
-    if (autoOnes.length > 0 && otherOnes.length > 0) {
-      autoOnes.forEach(t => toDelete.push(t));
-    }
-  });
+  // 收集所有「有手動記帳」的 category（不限 user_id）
+  const categoriesWithManual = new Set(otherOnes.map(t => t.category));
 
-  Logger.log(`發現 ${toDelete.length} 筆重複的自動套用記帳：`);
-  toDelete.forEach(t => Logger.log(`  刪除 → ${t.date} | ${t.category} | ${t.note} | $${t.amount} | src:${t.receipt_source}`));
+  // 自動套用的項目中，若同 category 有對應的手動記帳 → 加入刪除清單
+  const toDelete = autoOnes.filter(t => categoriesWithManual.has(t.category));
+  const toKeep   = autoOnes.filter(t => !categoriesWithManual.has(t.category));
+
+  Logger.log(`準備刪除 ${toDelete.length} 筆重複的自動套用記帳：`);
+  toDelete.forEach(t => Logger.log(`  刪除 → ${t.date} | ${t.user_id} | ${t.category} | ${t.note} | $${t.amount}`));
+
+  Logger.log(`保留 ${toKeep.length} 筆無對應手動記帳的自動套用記帳：`);
+  toKeep.forEach(t => Logger.log(`  保留 → ${t.date} | ${t.category} | ${t.note} | $${t.amount}`));
 
   if (toDelete.length === 0) {
     Logger.log('沒有需要清除的重複項目');
