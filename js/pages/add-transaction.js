@@ -303,19 +303,39 @@ const AddPage = (() => {
     _showQuickRecordModal(item, async (amount, date) => {
       Loader.show('記帳中...');
       try {
-        await API.addTransaction({
-          user_id:        user.userId,
-          type:           item.type,
-          amount,
-          category:       item.category,
-          payment_method: item.payment_method,
-          note:           `固定：${item.name || item.category}`,
-          merchant_name:  '',
-          receipt_source: 'recurring',
-          date
-        });
+        const now = new Date();
+        const year = now.getFullYear(), month = now.getMonth() + 1;
+        const ym = `${year}-${String(month).padStart(2,'0')}`;
+
+        // 檢查本月是否已有同 category 記帳（避免與 applyRecurring 重複）
+        const existing = await API.getTransactions({ year, month });
+        const existingTxn = (existing.transactions || []).find(t =>
+          t.category === item.category && String(t.date || '').startsWith(ym)
+        );
+
+        if (existingTxn) {
+          // 已有記帳（可能是 applyRecurring 自動建立）→ 更新金額與日期
+          await API.updateTransaction(existingTxn.transaction_id, {
+            amount,
+            date,
+            note: `固定：${item.name || item.category}`
+          });
+          Toast.success('已更新本月記帳金額！');
+        } else {
+          await API.addTransaction({
+            user_id:        user.userId,
+            type:           item.type,
+            amount,
+            category:       item.category,
+            payment_method: item.payment_method,
+            note:           `固定：${item.name || item.category}`,
+            merchant_name:  '',
+            receipt_source: 'recurring',
+            date
+          });
+          Toast.success('記帳成功！');
+        }
         State.invalidateTransactionCache();
-        Toast.success('記帳成功！');
       } catch(err) {
         Toast.error('記帳失敗：' + err.message);
       } finally {
