@@ -121,10 +121,22 @@ const HistoryPage = (() => {
 
     el.innerHTML = Object.entries(groups).sort((a,b)=>b[0].localeCompare(a[0])).map(([date, items]) => {
       const dayExpense = items.filter(t=>t.type==='expense').reduce((s,t)=>s+(Number(t.amount)||0),0);
+      const dayIncome  = items.filter(t=>t.type==='income' ).reduce((s,t)=>s+(Number(t.amount)||0),0);
+      let totalHtml = '';
+      if (dayIncome > 0 && dayExpense > 0) {
+        totalHtml = `<div style="display:flex;gap:8px;align-items:center;">
+          <span style="color:var(--color-income);font-size:13px;font-weight:600;">+${Utils.formatAmount(dayIncome)}</span>
+          <span class="date-group-total">-${Utils.formatAmount(dayExpense)}</span>
+        </div>`;
+      } else if (dayIncome > 0) {
+        totalHtml = `<div class="date-group-total" style="color:var(--color-income);">+${Utils.formatAmount(dayIncome)}</div>`;
+      } else if (dayExpense > 0) {
+        totalHtml = `<div class="date-group-total">-${Utils.formatAmount(dayExpense)}</div>`;
+      }
       return `
         <div class="date-group-header">
           <div class="date-group-label">${Utils.formatDate(date, 'long')}</div>
-          ${dayExpense > 0 ? `<div class="date-group-total">-${Utils.formatAmount(dayExpense)}</div>` : ''}
+          ${totalHtml}
         </div>
         <div class="txn-list" style="margin-bottom:12px;">
           ${items.map(t => _renderTxnItem(t)).join('')}
